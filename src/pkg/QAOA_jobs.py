@@ -76,7 +76,7 @@ def format_job_name_from_result(job_result):
     return f"{job_result[0]}_{job_result[1]}_{graph_string}.npy"
 
 def graph_to_string(graph):
-    return graph.replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '').replace(',', '')
+    return str(graph).replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '').replace(',', '')
 
 def load_numpy_arrays_to_list(filenames):
 # Assuming format_job_name_from_result(QAOA_result) returns unique names for each result
