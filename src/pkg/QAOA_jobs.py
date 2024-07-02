@@ -72,8 +72,11 @@ def plot_table_from_list_of_lists(list_of_lists, column_headers, title_text = ""
                 )
 
 def format_job_name_from_result(job_result):
-    graph_string = job_result[2].replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '').replace(',', '')
+    graph_string = graph_to_string(job_result[2])
     return f"{job_result[0]}_{job_result[1]}_{graph_string}.npy"
+
+def graph_to_string(graph):
+    return graph.replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '').replace(',', '')
 
 def load_numpy_arrays_to_list(filenames):
     # Assuming format_job_name_from_result(QAOA_result) returns unique names for each result
@@ -110,37 +113,64 @@ def remove_npy_files(filenames):
         else:
             print(f"{filename} does not exist.")
 
-def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, append_result = False, max_graph= None):
+def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, append_result = False, max_graph= None, parallel_task= False):
 
-    def run_for_isomorph_graph_job1(isomorphic_graphs_4vertices, append_result):
+    def run_for_isomorph_graph_job1(isomorphic_graphs, append_result):
         results_list = []
-        numpy_array_name_list = []
-        isomorphic_graph_number = len(isomorphic_graphs_4vertices)
+        isomorphic_graph_number = len(isomorphic_graphs)
         loop_count = 0
 
         start_time = time.time()
 
-        for graph in isomorphic_graphs_4vertices:
+        for graph in isomorphic_graphs:
             loop_count += 1            
             write_to_progress_file(f"into loop {loop_count} on {isomorphic_graph_number}",start_time)
 
-            results_list, numpy_array_name_list = execute_qaoa_subjob1(graph,n_vertices,"QAOA", "unlabeledGraph",append_result, results_list,numpy_array_name_list)
+            results_list = execute_qaoa_subjob1(graph,n_vertices,"QAOA", "unlabeledGraph",append_result, results_list)
             
             
             write_to_progress_file(f"QAOA for {loop_count} on {isomorphic_graph_number} done",start_time)
             
-            results_list, numpy_array_name_list = execute_qaoa_subjob1(graph,n_vertices,"fQAOA", "unlabeledGraph",append_result, results_list,numpy_array_name_list)         
+            results_list = execute_qaoa_subjob1(graph,n_vertices,"fQAOA", "unlabeledGraph",append_result, results_list)         
             write_to_progress_file(f"fQAOA for {loop_count} on {isomorphic_graph_number} done",start_time)
 
             #compute up to n isomorphic graph for each unlabeled graph
             isomorphic_graphs = generate_isomorphics_from_combination(graph,max_isomorphism_number=n_isomorph_max)
             for ii, isomorph_graph in enumerate(isomorphic_graphs):            
-                results_list,numpy_array_name_list = execute_qaoa_subjob1(graph,n_vertices,"QAOA", f"isomorphGraph{ii}",append_result, results_list,numpy_array_name_list)
+                results_list = execute_qaoa_subjob1(graph,n_vertices,"QAOA", f"isomorphGraph{ii}",append_result, results_list)
                 write_to_progress_file(f"QAOA for isomorph. graph  {ii} on {n_isomorph_max} for graph {loop_count} on {isomorphic_graph_number} done",start_time)
-                results_list,numpy_array_name_list = execute_qaoa_subjob1(graph,n_vertices,"fQAOA", f"isomorphGraph{ii}",append_result, results_list,numpy_array_name_list)      
+                results_list = execute_qaoa_subjob1(graph,n_vertices,"fQAOA", f"isomorphGraph{ii}",append_result, results_list)      
                 write_to_progress_file(f"fQAOA for isomorph. graph  {ii} on {n_isomorph_max} for graph {loop_count} on {isomorphic_graph_number} done",start_time)
 
-        return results_list, numpy_array_name_list
+        return results_list
+
+    def run_for_isomorph_graph_job1_parallel(isomorphic_graphs, append_result):
+        results_list = []
+        isomorphic_graph_number = len(isomorphic_graphs)
+        start_time = time.time()
+
+        job_lists_QAOA = [[graph,n_vertices,"QAOA", "unlabeledGraph",append_result] for graph in isomorphic_graphs]
+        job_lists_fQAOA = [[graph,n_vertices,"fQAOA", "unlabeledGraph",append_result] for graph in isomorphic_graphs]
+        job_lists_iso = []
+        for ii, graph in enumerate(isomorphic_graphs):
+            isomorphic_graphs = generate_isomorphics_from_combination(graph,max_isomorphism_number=n_isomorph_max)
+            for ij, isomorph_graph in enumerate(isomorphic_graphs):                   
+                job_lists_iso.append([isomorph_graph,n_vertices,"QAOA", f"isomorphGraph{ii}_{graph_to_string(graph)}",append_result])
+                job_lists_iso.append([isomorph_graph,n_vertices,"fQAOA", f"isomorphGraph{ii}_{graph_to_string(graph)}",append_result])
+
+        all_jobs = job_lists_QAOA + job_lists_fQAOA + job_lists_iso
+
+        job_count = 0
+        all__jobs_count = len(all_jobs)
+        results_list = []
+        for job in all_jobs:
+            job_count += 1            
+            write_to_progress_file(f"starting job {job_count} of {all__jobs_count}",start_time)
+            result = execute_qaoa_subjob1_parallel(job[0],job[1],job[2], job[3],append_result)
+            results_list.append(result)
+            write_to_progress_file(f"done job {job_count}: {job[0]}-{job[1]}-{job[2]}-{job[3]}",start_time)
+                        
+        return results_list
 
     write_to_progress_file(f"start")
 
@@ -153,18 +183,21 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
     QAOA.n_samples = n_samples
 
     isomorphic_graphs = generate_all_connected_graphs(n_vertices, True)
-    isomorpic_graphs_graphs = [graph[0] for graph in isomorphic_graphs]
+    isomorphic_graphs_graphs = [graph[0] for graph in isomorphic_graphs]
 
     if max_graph != None:
-        isomorpic_graphs_graphs = isomorpic_graphs_graphs[:max_graph]
+        isomorphic_graphs_graphs = isomorphic_graphs_graphs[:max_graph]
 
     write_to_progress_file(f"graph generated")
  
-    results_list, numpy_array_name_list = run_for_isomorph_graph_job1(isomorpic_graphs_graphs, append_result)
+    if not parallel_task:
+        results_list = run_for_isomorph_graph_job1(isomorphic_graphs_graphs, append_result)
+    else:
+        results_list = run_for_isomorph_graph_job1_parallel(isomorphic_graphs_graphs, append_result)
 
     if not append_result:
-        results_list = load_numpy_arrays_to_list(numpy_array_name_list)
-        remove_npy_files(numpy_array_name_list)
+        results_list = load_numpy_arrays_to_list(results_list)
+        remove_npy_files(results_list)
         # Get current date and time
         current_datetime = datetime.now()
         formatted_datatime = current_datetime.strftime("%m%d%H%M")
@@ -175,17 +208,29 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
         results_list = [["cost_layer","label", "graph", "most common element", "most common element sampling proportion", "mean of distribution", "maximum of distribution", "standard dev. of distribution", "simulation optimized layer parameters", "time taken"],["cost_layer","label", "graph", "most common element", "most common element sampling proportion", "mean of distribution", "maximum of distribution", "standard dev. of distribution", "simulation optimized layer parameters", "time taken"]]
         plot_table_from_list_of_lists(results_list,headers)
 
-def execute_qaoa_subjob1(graph,n_vertices,cost_layer, label, append_result, result_list = [], numpy_array_name_list = []):
+def execute_qaoa_subjob1(graph,n_vertices,cost_layer, label, append_result, result_list = []):
     np.random.seed(42)
     QAOA_result = extract_result(graph,n_vertices, cost_layer, label)
     current_directory = os.getcwd()
     if append_result:
         result_list.append(QAOA_result)
-        return result_list, numpy_array_name_list
+        return result_list
     else :
-        numpy_array_name_list.append(format_job_name_from_result(QAOA_result))
+        result_list.append(format_job_name_from_result(QAOA_result))
         np.save(f"{format_job_name_from_result(QAOA_result)}", np.array(QAOA_result)) 
-    return result_list, numpy_array_name_list
+    return result_list
+
+
+def execute_qaoa_subjob1_parallel(graph,n_vertices,cost_layer, label, append_result):
+    np.random.seed(42)
+    QAOA_result = extract_result(graph,n_vertices, cost_layer, label)
+    current_directory = os.getcwd()
+    if append_result:
+        return QAOA_result
+    else :
+        np.save(f"{format_job_name_from_result(QAOA_result)}", np.array(QAOA_result)) 
+        return format_job_name_from_result(QAOA_result)
+    
 
 def extract_result(graph,n_vertices, cost_layer, label):
 
