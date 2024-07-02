@@ -8,6 +8,9 @@ from collections import Counter
 from collections import namedtuple
 
 graph = "default graph" #set in the main file
+n_samples = 200 # 100, 500 set in main file
+steps = 30 # set in main file
+n_layers = 4 #set in main file
 QAOAResult = namedtuple('QAOAResult', ['bit_strings_objectives_distribution', 'parameters'])
 
 # unitary operator U_B with parameter beta
@@ -118,7 +121,7 @@ def circuit(graph, n_wires, gammas, betas, edge=None, n_layers=1):
     return qml.expval(H)
 
 
-def qaoa_maxcut(n_wires, graph, n_layers=1, mixer_layer = "fermionic_Ryy", cost_layer = "QAOA"):
+def qaoa_maxcut(n_wires, graph, mixer_layer = "fermionic_Ryy", cost_layer = "QAOA"):
 
     # initialize the parameters near zero
     init_params = 0.01 * np.random.rand(2, n_layers, requires_grad=True)
@@ -130,7 +133,7 @@ def qaoa_maxcut(n_wires, graph, n_layers=1, mixer_layer = "fermionic_Ryy", cost_
         neg_obj = 0
         for edge in graph:
             # objective for the MaxCut problem
-            neg_obj -= 0.5 * (1 - circuit(graph, n_wires, gammas, betas, edge=edge, n_layers=n_wires))
+            neg_obj -= 0.5 * (1 - circuit(graph, n_wires, gammas, betas, edge=edge, n_layers=n_layers))
         return neg_obj
 
     # initialize optimizer: Adagrad works well empirically
@@ -138,7 +141,7 @@ def qaoa_maxcut(n_wires, graph, n_layers=1, mixer_layer = "fermionic_Ryy", cost_
 
     # optimize parameters in objective
     params = init_params
-    steps = 30
+
     for i in range(steps):
         params = opt.step(objective, params)
         if (i + 1) % 5 == 0:
@@ -146,7 +149,7 @@ def qaoa_maxcut(n_wires, graph, n_layers=1, mixer_layer = "fermionic_Ryy", cost_
                    
     # sample measured bitstrings 100 times
     bit_strings = []
-    n_samples = 200 # 100, 500
+
     for i in range(0, n_samples):
         bit_strings.append(circuit(graph,n_wires, params[0], params[1], edge=None, n_layers=n_layers))
     

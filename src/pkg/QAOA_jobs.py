@@ -1,6 +1,4 @@
 from pennylane import numpy as np
-import math
-import cmath
 from QAOA_utils import *
 from graph import *
 import QAOA
@@ -10,6 +8,11 @@ import matplotlib.pyplot as plt
 import time
 import os
 from datetime import datetime
+
+
+# Get the current directory path and # Define the filename
+current_directory = os.path.dirname(os.path.realpath(__file__))
+filename = os.path.join(current_directory, 'progress.txt')
 
 def plot_table_from_list_of_lists(list_of_lists, column_headers, title_text = ""):
     footer_text = date.today()
@@ -107,37 +110,57 @@ def remove_npy_files(filenames):
         else:
             print(f"{filename} does not exist.")
 
-def execute_qaoa_job1(append_result = False):
+def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, append_result = False, max_graph= None):
 
-    def run_for_isomorph_graph_job1(isomorphic_graphs_4vertices, append_result ):
-        
+    def run_for_isomorph_graph_job1(isomorphic_graphs_4vertices, append_result):
         results_list = []
         numpy_array_name_list = []
+        isomorphic_graph_number = len(isomorphic_graphs_4vertices)
+        loop_count = 0
+
+        start_time = time.time()
+
         for graph in isomorphic_graphs_4vertices:
+            loop_count += 1            
+            write_to_progress_file(f"into loop {loop_count} on {isomorphic_graph_number}",start_time)
 
             results_list, numpy_array_name_list = execute_qaoa_subjob1(graph,n_vertices,"QAOA", "unlabeledGraph",append_result, results_list,numpy_array_name_list)
+            
+            
+            write_to_progress_file(f"QAOA for {loop_count} on {isomorphic_graph_number} done",start_time)
+            
             results_list, numpy_array_name_list = execute_qaoa_subjob1(graph,n_vertices,"fQAOA", "unlabeledGraph",append_result, results_list,numpy_array_name_list)         
+            write_to_progress_file(f"fQAOA for {loop_count} on {isomorphic_graph_number} done",start_time)
 
             #compute up to n isomorphic graph for each unlabeled graph
-            isomorphic_graphs = generate_isomorphics_from_combination(graph,max_isomorphism_number=graph_isomorphism_number_to_compute)
+            isomorphic_graphs = generate_isomorphics_from_combination(graph,max_isomorphism_number=n_isomorph_max)
             for ii, isomorph_graph in enumerate(isomorphic_graphs):            
                 results_list,numpy_array_name_list = execute_qaoa_subjob1(graph,n_vertices,"QAOA", f"isomorphGraph{ii}",append_result, results_list,numpy_array_name_list)
+                write_to_progress_file(f"QAOA for isomorph. graph  {ii} on {n_isomorph_max} for graph {loop_count} on {isomorphic_graph_number} done",start_time)
                 results_list,numpy_array_name_list = execute_qaoa_subjob1(graph,n_vertices,"fQAOA", f"isomorphGraph{ii}",append_result, results_list,numpy_array_name_list)      
+                write_to_progress_file(f"fQAOA for isomorph. graph  {ii} on {n_isomorph_max} for graph {loop_count} on {isomorphic_graph_number} done",start_time)
 
         return results_list, numpy_array_name_list
 
+    write_to_progress_file(f"start")
+
     #sets the seed of the random number generator provided by NumPy from reproducibility
     np.random.seed(42)
-    n_vertices = 4
-    QAOA.n_wires = n_vertices #set equal to vertice always
-    isomorphic_graphs_4vertices = generate_all_connected_graphs(n_vertices, True)
-    graph_isomorphism_number_to_compute = 3 # 3 isomorphic graph per graph at most
 
-    #TEST JASMIN: FIRST GRAPH ONLY, no isomorph
-    #isomorphic_graphs_4vertices = [isomorphic_graphs_4vertices[0][0]]
-    #graph_isomorphism_number_to_compute = 0
-   
-    results_list, numpy_array_name_list = run_for_isomorph_graph_job1(isomorphic_graphs_4vertices, append_result)
+    #QAOA.n_wires = n_vertices #set equal to vertice always. Default.Qbits takes an automatic number of qbits based on circuit. circuit is based on graph and no graph has free vertices.    
+    QAOA.n_layers = n_layers
+    QAOA.steps = n_steps
+    QAOA.n_samples = n_samples
+
+    isomorphic_graphs = generate_all_connected_graphs(n_vertices, True)
+    isomorpic_graphs_graphs = [graph[0] for graph in isomorphic_graphs]
+
+    if max_graph != None:
+        isomorpic_graphs_graphs = isomorpic_graphs_graphs[:max_graph]
+
+    write_to_progress_file(f"graph generated")
+ 
+    results_list, numpy_array_name_list = run_for_isomorph_graph_job1(isomorpic_graphs_graphs, append_result)
 
     if not append_result:
         results_list = load_numpy_arrays_to_list(numpy_array_name_list)
@@ -146,19 +169,20 @@ def execute_qaoa_job1(append_result = False):
         current_datetime = datetime.now()
         formatted_datatime = current_datetime.strftime("%m%d%H%M")
         np.save(f"qaoa_job1_{formatted_datatime}", np.array(results_list)) 
+        np.savetxt(f"qaoa_job1_{formatted_datatime}.txt", results_list, fmt='%s', delimiter='\t')
     else:
         headers = ["cost_layer","label", "graph", "most common element", "most common element sampling proportion", "mean of distribution", "maximum of distribution", "standard dev. of distribution", "simulation optimized layer parameters", "time taken"]
         results_list = [["cost_layer","label", "graph", "most common element", "most common element sampling proportion", "mean of distribution", "maximum of distribution", "standard dev. of distribution", "simulation optimized layer parameters", "time taken"],["cost_layer","label", "graph", "most common element", "most common element sampling proportion", "mean of distribution", "maximum of distribution", "standard dev. of distribution", "simulation optimized layer parameters", "time taken"]]
         plot_table_from_list_of_lists(results_list,headers)
 
-def execute_qaoa_subjob1(graph,n_vertices,cost_layer, label, append_result, result_list = None, numpy_array_name_list = None):
+def execute_qaoa_subjob1(graph,n_vertices,cost_layer, label, append_result, result_list = [], numpy_array_name_list = []):
     np.random.seed(42)
     QAOA_result = extract_result(graph,n_vertices, cost_layer, label)
     current_directory = os.getcwd()
-    if append_result and result_list is not None :
+    if append_result:
         result_list.append(QAOA_result)
-        return result_list
-    elif numpy_array_name_list is not None :
+        return result_list, numpy_array_name_list
+    else :
         numpy_array_name_list.append(format_job_name_from_result(QAOA_result))
         np.save(f"{format_job_name_from_result(QAOA_result)}", np.array(QAOA_result)) 
     return result_list, numpy_array_name_list
@@ -179,5 +203,23 @@ def extract_result(graph,n_vertices, cost_layer, label):
 
     return [cost_layer,label, str(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters), elapsed_time_formatted]
 
+def write_to_progress_file(text, start_time = None):
+
+    if start_time != None:
+        end_time = time.time()
+        formatted_time = format_time(int(end_time - start_time))
+        text += f" time taken: {formatted_time} "
+
+    with open(filename, 'a') as f:
+        f.write(f'{text}\n')
+
+def format_time(seconds):
+    """
+    Convert seconds into a string of format 'MM:SS'.
+    """
+    m, s = divmod(seconds, 60)
+    return f'{m:02}:{s:02}'
 #job1: results for 4 vertices,3 isomorphism per graph
-execute_qaoa_job1()
+#execute_qaoa_job1(n_vertices = 4, n_layers = 4, n_samples = 200, n_steps = 30, n_isomorph_max = 3, append_result=True)
+
+execute_qaoa_job1(n_vertices = 4, n_layers = 4, n_samples = 200, n_steps = 30, n_isomorph_max = 3, append_result=False)

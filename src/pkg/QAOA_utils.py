@@ -77,9 +77,6 @@ def int_to_bitstring(num):
 
 def compute_stats(numbers):
 
-    if len(numbers) < 4:
-        raise ValueError("Jot enough samples")
-
     weighted_sum = sum([number[0]*number[1] for number in numbers])
     total_count = sum([number[1] for number in numbers])
     mean = weighted_sum/total_count
