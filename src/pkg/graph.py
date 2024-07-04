@@ -217,9 +217,27 @@ def test_combination_list():
     test_combination33 = [(0,1),(0,2),(2,3),(4,1)]
     return [test_combination1,test_combination2,test_combination3,test_combination31,test_combination32,test_combination33]
 
-#draw_test3 = draw_graph(test_combination3)
-#graphtest = generate_all_connected_graphs(4, True)
-#graphtestiso = generate_isomorphics_from_combination(graphtest[5],8)
-#draw_graphs_in_grid(test_combination_list())
+def generate_string_graph_representation(graph):
+    # Initialize an empty list to store the result strings
+    result_strings = []
 
-stop= "stop"
+    # Sort the graph based on the first element of each tuple (node)
+    graph_sorted = sorted(graph)
+
+    # Initialize variables to keep track of current node and components
+    current_node = graph_sorted[0][0]
+    component = [current_node]
+
+    for edge in graph_sorted:
+        if edge[0] == current_node + 1:
+            component.append(edge[1])
+        else:
+            result_strings.append('-'.join(map(str, component)))
+            current_node = edge[0]
+            component = [current_node, edge[1]]
+
+    # Append the last component to result_strings
+    result_strings.append('-'.join(map(str, component)))
+
+    return result_strings
+

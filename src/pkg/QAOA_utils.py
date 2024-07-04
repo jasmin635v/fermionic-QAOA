@@ -4,7 +4,9 @@ import statistics
 import networkx as nx
 from itertools import combinations
 from collections import Counter
-import math
+import math, os, threading, time, sys
+from datetime import date
+import matplotlib.pyplot as plt
 
 matchgateOnes = np.array([[1, 0, 0, 1],
                 [0, 1, 1, 0],
@@ -21,6 +23,11 @@ fRyy = 1 / np.sqrt(2) * np.array([[1, 0, 0, -1],
                     [0, 1, 1, 0],
                     [1, 0, 0, 1]])
 
+current_directory = os.path.dirname(os.path.realpath(__file__))
+filename = os.path.join(current_directory, 'progress.txt')
+file_lock = threading.Lock()
+default=os.path.join(os.path.dirname(__file__), "data")
+
 
 def Rzz_matrice(gamma):
     exp_term = cmath.exp(1j * gamma/ 2)
@@ -30,35 +37,9 @@ def Rzz_matrice(gamma):
             [0, 0, exp_term, 0],
             [0, 0, 0, exp_term_m]])
 
-def generate_string_graph_representation(graph):
-    # Initialize an empty list to store the result strings
-    result_strings = []
-
-    # Sort the graph based on the first element of each tuple (node)
-    graph_sorted = sorted(graph)
-
-    # Initialize variables to keep track of current node and components
-    current_node = graph_sorted[0][0]
-    component = [current_node]
-
-    for edge in graph_sorted:
-        if edge[0] == current_node + 1:
-            component.append(edge[1])
-        else:
-            result_strings.append('-'.join(map(str, component)))
-            current_node = edge[0]
-            component = [current_node, edge[1]]
-
-    # Append the last component to result_strings
-    result_strings.append('-'.join(map(str, component)))
-
-    return result_strings
-# unitary operator U_B with parameter beta
-
 def bitstring_to_int(bit_string_sample):
     bit_string = "".join(str(bs) for bs in bit_string_sample)
     return int(bit_string, base=2)
-
 
 def bitstring_to_objective(bitstring, graph):
     #convert bitstring to a list of 0 and 1
@@ -73,7 +54,6 @@ def int_to_bitstring(num):
     # Convert integer to binary string (without '0b' prefix)
     bit_string = bin(num)[2:]
     return bit_string
-
 
 def compute_stats(numbers):
 
@@ -99,7 +79,6 @@ def compute_stats(numbers):
     #weighted_mean_3 = (sorted_numbers[0][0]*sorted_numbers[0][1] + sorted_numbers[1][0]*sorted_numbers[1][1] +sorted_numbers[2][0]*sorted_numbers[2][1])  / (sorted_numbers[0][1] + sorted_numbers[1][1] +sorted_numbers[2][1])
 
     return  most_common_element, most_common_element_count_ratio, mean, maximum, weighted_stddev
-
 
 def generate_all_graphs(n):
     """ Generate all possible graphs with n vertices """
@@ -148,3 +127,124 @@ def generate_all_graphs(n):
         all_graphs.extend(edges_combination_weight)
 
     return all_graphs
+
+def write_to_progress_file(text, start_time = None, slurm = True):
+
+    if start_time != None:
+        end_time = time.time()
+        formatted_time = format_time(int(end_time - start_time))
+        text += f" time taken: {formatted_time}. Time: {end_time} "
+
+    with file_lock:
+        if slurm:
+            write_to_slurm_output(text)
+        else:
+            with open(filename, 'a') as f:
+                f.write(f'{text}\n')
+
+def format_time(seconds):
+    """
+    Convert seconds into a string of format 'MM:SS'.
+    """
+    m, s = divmod(seconds, 60)
+    return f'{m:02}:{s:02}'
+
+def write_to_slurm_output(message):
+    # Print to stdout or stderr
+    print(message+"\n")
+    # Force flush to ensure immediate output
+    sys.stdout.flush()
+
+def plot_table_from_list_of_lists(list_of_lists, column_headers, title_text = ""):
+    footer_text = date.today()
+    fig_background_color = 'white'
+    fig_border = 'steelblue'
+    data =  list_of_lists
+
+    cell_text = []
+    for row in data:
+        cell_text.append([f'{str(x)}' for x in row])
+    # Get some lists of color specs for row and column headers
+    #rcolors = plt.cm.BuPu(np.full(len(row_headers), 0.1))
+    ccolors = plt.cm.BuPu(np.full(len(column_headers), 0.1))
+
+    plt.figure(linewidth=2,
+            edgecolor=fig_border,
+            facecolor=fig_background_color,
+            tight_layout={'pad':1},
+            #figsize=(5,3)
+            )
+    # Add a table at the bottom of the axes
+    the_table = plt.table(cellText=cell_text,
+                        #rowLabels=row_headers,
+                        #rowColours=rcolors,
+                        rowLoc='right',
+                        colColours=ccolors,
+                        colLabels=column_headers,
+                        loc='center')
+    # Scaling is the only influence we have over top and bottom cell padding.
+    # Make the rows taller (i.e., make cell y scale larger).
+    the_table.scale(1, 1.5)
+    # Hide axes
+    ax = plt.gca()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+    # Hide axes border
+    plt.box(on=None)
+    # Add title
+    plt.suptitle(title_text)
+    # Add footer
+    plt.figtext(0.95, 0.05, footer_text, horizontalalignment='right', size=6, weight='light')
+    # Force the figure to update, so backends center objects correctly within the figure.
+    # Without plt.draw() here, the title will center on the axes and not the figure.
+    plt.draw()
+    # Create image. plt.savefig ignores figure edge and face colors, so map them.
+    fig = plt.gcf()
+    plt.savefig('pyplot-table-demo.png',
+                #bbox='tight',
+                edgecolor=fig.get_edgecolor(),
+                facecolor=fig.get_facecolor(),
+                dpi=150
+                )
+
+def format_job_name_from_result(job_result):
+    graph_string = graph_to_string(job_result[2])
+    return f"{job_result[0]}_{job_result[1]}_{graph_string}.npy"
+
+def graph_to_string(graph):
+    return str(graph).replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '').replace(',', '')
+
+def load_numpy_arrays_to_list(filenames):
+# Assuming format_job_name_from_result(QAOA_result) returns unique names for each result
+# and QAOA_result is a list containing arrays
+# Example filenames (replace with your actual filenames)
+
+    # Initialize a list to store all loaded lists
+    all_results = []
+
+    # Load each array from the files
+    for filename in filenames:
+        # Load the numpy array
+        loaded_array = np.load(filename)
+
+        # Convert to list if necessary
+        if isinstance(loaded_array, np.ndarray):
+            loaded_array = loaded_array.tolist()
+
+        # Append to the master list
+        all_results.append(loaded_array)
+
+    # Now all_results is a list of lists containing your original lists from QAOA_result
+    return all_results
+
+def remove_npy_files(filenames):
+    for filename in filenames:
+    # Construct the full path to the file in the current directory
+        file_path = os.path.join(os.getcwd(), filename)
+        
+        # Check if the file exists before attempting to delete
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"Deleted: {filename}")
+        else:
+            print(f"{filename} does not exist.")
