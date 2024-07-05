@@ -7,34 +7,24 @@ from graph import *
 from collections import Counter
 from collections import namedtuple
 
+JobResult = namedtuple('JobResult', ['cost_layer', 'label','graph','most_sampled_value','most_sampled_value_ratio','mean','maximum','stdev','parameters'])
 QAOAResult = namedtuple('QAOAResult', ['bit_strings_objectives_distribution', 'parameters'])
-
 # connected  graphs with n nodes:
 
 #Nodes     2   3    4      5        6          7            8              9
 #Unlabeled 1,  2,   6,    21,     112,       853,       11117,         261080
 #Labeled   4, 38, 728, 26704, 1866256, 251548592, 66296291072, 34496488594816
 
-def execute_qaoa_subjob1(graph,n_vertices, n_layers, cost_layer, label, n_steps = 30, n_samples = 200):
-    np.random.seed(42)
-    start_time = time.time()
-    graph_results = qaoa_maxcut(n_vertices,n_layers, graph,n_vertices, cost_layer=cost_layer , n_steps = n_steps, n_samples = n_samples) #n_layer = n_vertices
-    graph_results_distribution, graph_results_parameters  = graph_results.bit_strings_objectives_distribution, graph_results.parameters
-    most_common_element, most_common_element_count_ratio, mean, maximum, stdev = compute_stats(graph_results_distribution)
 
-    elapsed_time_seconds = time.time() - start_time
-    elapsed_time_formatted = f"{int(elapsed_time_seconds // 60)} mins {int(elapsed_time_seconds % 60)} secs"
-
-    #chi squared
-    return [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters)]
-
-def qaoa_maxcut(n_wires, n_layers, graph, mixer_layer = "fermionic_Ryy", cost_layer = "QAOA", n_steps = 30, n_samples = 200):
-
+def qaoa_maxcut(graph, n_wires, n_layers, cost_layer = "QAOA", n_steps = 30, n_samples = 200, lightning_device = True, mixer_layer = "fermionic_Ryy"):
+    #[isomorph_graph,n_vertices, n_layers, "QAOA", f"isomorphGraph{ii}_{graph_to_string(graph)}", n_steps, n_samples]
     # initialize the parameters near zero
     init_params = 0.01 * np.random.rand(2, n_layers, requires_grad=True)
 
-    #dev = qml.device("lightning.qubit", wires=n_wires, shots=1)
-    dev = qml.device("default.qubit",shots=1)
+    if lightning_device:
+        dev = qml.device("lightning.qubit", wires=n_wires, shots=1)
+    else: 
+        dev = qml.device("default.qubit",shots=1)
 
     # minimize the negative of the objective function
     def objective(params): #only params to be optimized here for optimizer fct
@@ -66,10 +56,12 @@ def qaoa_maxcut(n_wires, n_layers, graph, mixer_layer = "fermionic_Ryy", cost_la
 
     return QAOAResult(objective_counter, params)
 
-def sample_bitstrings(graph, n_wires, gammas, betas, n_samples, n_layers=1):
+def sample_bitstrings(graph, n_wires, gammas, betas, n_samples, n_layers=1, lightning_device = True):
 
-    #dev = qml.device("lightning.qubit", wires=n_wires, shots=1)
-    dev = qml.device("default.qubit",shots=1)
+    if lightning_device:
+        dev = qml.device("lightning.qubit", wires=n_wires, shots=1)
+    else: 
+        dev = qml.device("default.qubit",shots=1)
 
     bit_strings = []
 
@@ -95,10 +87,12 @@ def circuit(graph, n_wires, gammas, betas, edge=None, n_layers=1):
     H = qml.PauliZ(edge[0]) @ qml.PauliZ(edge[1])
     return qml.expval(H)
 
-def circuit_samples(graph, n_wires, gammas, betas, n_layers=1):
+def circuit_samples(graph, n_wires, gammas, betas, n_layers=1, lightning_device = True):
 
-    #dev_sample = qml.device("lightning.qubit", wires=n_wires, shots=1)
-    dev_sample = qml.device("default.qubit",shots=1)
+    if lightning_device:
+        dev_sample = qml.device("lightning.qubit", wires=n_wires, shots=1)
+    else: 
+        dev_sample = qml.device("default.qubit",shots=1)
 
     @qml.qnode(dev_sample)
     def quantum_circuit(gammas, betas):
@@ -108,11 +102,9 @@ def circuit_samples(graph, n_wires, gammas, betas, n_layers=1):
             U_C(graph, gammas[i])
             U_B(graph, n_wires, betas[i])
 
-
         measurement_values = [qml.expval(qml.PauliZ(w)) for w in range(n_wires)]
 
         return measurement_values
-
 
     results = quantum_circuit(gammas, betas)
 
