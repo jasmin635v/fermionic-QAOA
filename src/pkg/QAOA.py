@@ -33,7 +33,8 @@ def qaoa_maxcut(n_wires, n_layers, graph, mixer_layer = "fermionic_Ryy", cost_la
     # initialize the parameters near zero
     init_params = 0.01 * np.random.rand(2, n_layers, requires_grad=True)
 
-    dev = qml.device("lightning.qubit", wires=n_wires, shots=1)
+    #dev = qml.device("lightning.qubit", wires=n_wires, shots=1)
+    dev = qml.device("default.qubit",shots=1)
 
     # minimize the negative of the objective function
     def objective(params): #only params to be optimized here for optimizer fct
@@ -67,7 +68,8 @@ def qaoa_maxcut(n_wires, n_layers, graph, mixer_layer = "fermionic_Ryy", cost_la
 
 def sample_bitstrings(graph, n_wires, gammas, betas, n_samples, n_layers=1):
 
-    dev = qml.device("lightning.qubit", wires=n_wires, shots=1)
+    #dev = qml.device("lightning.qubit", wires=n_wires, shots=1)
+    dev = qml.device("default.qubit",shots=1)
 
     bit_strings = []
 
@@ -95,7 +97,8 @@ def circuit(graph, n_wires, gammas, betas, edge=None, n_layers=1):
 
 def circuit_samples(graph, n_wires, gammas, betas, n_layers=1):
 
-    dev_sample = qml.device("lightning.qubit", wires=n_wires, shots=1)
+    #dev_sample = qml.device("lightning.qubit", wires=n_wires, shots=1)
+    dev_sample = qml.device("default.qubit",shots=1)
 
     @qml.qnode(dev_sample)
     def quantum_circuit(gammas, betas):

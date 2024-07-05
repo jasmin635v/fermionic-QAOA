@@ -60,7 +60,7 @@ def run_jobs_parallel_threadpoolexecutor(all_jobs):
                     
         return results_list  
 
-def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_graph= None, parallel_task= True):
+def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_graph= None, max_job = None, parallel_task= True):
     
     start_time = time.time()
     write_to_progress_file(f"start of QAOA - job1")
@@ -91,6 +91,9 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
 
     all_jobs = generate_job_list_job1(isomorphic_graphs_graphs, n_layers, n_steps, n_samples)
     job_count = 0
+
+    if max_job != None: #limit to amount of graph number if needed. TB Implemented: sampling according to weight
+        all_jobs = all_jobs[:max_graph]
 
     if not parallel_task:
         results_list = run_jobs(all_jobs)
