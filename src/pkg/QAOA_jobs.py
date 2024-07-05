@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import sys, pennylane as qml, math, cmath
-from pennylane import numpy as np
+import numpy as np
 from QAOA_utils import *
 from graph import *
 from collections import Counter
