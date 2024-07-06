@@ -1,4 +1,4 @@
-from pennylane import networkx as nx
+import networkx as nx
 from itertools import combinations, groupby
 import math, time
 #import matplotlib.pyplot as plt
