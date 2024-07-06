@@ -1,17 +1,10 @@
 from QAOA_utils import *
-import QAOA
-from graph import *
+import QAOA, graph_methods
 import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import sys, pennylane as qml, math, cmath
-import numpy as np
-from QAOA_utils import *
-from graph import *
-from collections import Counter
 from multiprocessing import Pool, cpu_count
 from functools import partial
-
 
 def execute_job_parallel(job):
     graph, n_vertices, n_layers, method, identifier, n_steps, n_samples = job
@@ -60,7 +53,7 @@ def run_jobs_parallel_threadpoolexecutor(all_jobs):
                     
         return results_list  
 
-def calculate_add_ratios_too_results_list(results_list):
+def calculate_add_ratios_to_results_list(results_list):
     fQAOA_list = [entry for entry in results_list if entry[0] == 'fQAOA']
     QAOA_list = [entry for entry in results_list if entry[0] == 'QAOA']
 
@@ -107,7 +100,7 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
         job_lists_fQAOA = [[graph,n_vertices,n_layers,"fQAOA", f"unlabeledGraph_{graph_to_string(graph)}", n_steps, n_samples] for graph in isomorphic_graph_lists]
         job_lists_iso = []
         for ii, graph in enumerate(isomorphic_graph_lists):
-            isomorphic_graphs = generate_isomorphics_from_combination(graph,max_isomorphism_number=n_isomorph_max)
+            isomorphic_graphs = graph_methods.generate_isomorphics_from_combination(graph,max_isomorphism_number=n_isomorph_max)
             isomorphic_graphs = isomorphic_graphs[1:] #the first generated isomorphic graph is identity
             for ij, isomorph_graph in enumerate(isomorphic_graphs):                   
                 job_lists_iso.append([isomorph_graph,n_vertices, n_layers, "QAOA", f"isomorphGraph{ii}_{graph_to_string(graph)}", n_steps, n_samples])
@@ -117,8 +110,7 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
         return all_jobs
 
     np.random.seed(42)
-
-    unlabeled_graphs = generate_all_connected_graphs(n_vertices, True)
+    unlabeled_graphs = graph_methods.generate_all_connected_graphs(n_vertices, True)
     write_to_progress_file(f"graphs generated")
 
     unlabeled_graphs_graphs = [graph[0] for graph in unlabeled_graphs]
@@ -139,7 +131,7 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
         results_list = run_jobs_parallel(all_jobs)
 
     #results_list = calculate_ratios_from_results_list(results_list)
-    results_list = calculate_add_ratios_too_results_list(results_list)
+    results_list = calculate_add_ratios_to_results_list(results_list)
 
     formatted_datatime = datetime.now().strftime("%m%d%H%M")
     #np.savetxt(f"/home/jcjcp/scratch/jcjcp/QAOA/MaxCut/src/pkg/qaoa_job1_{formatted_datatime}.txt", results_list, fmt='%s', delimiter='\t')

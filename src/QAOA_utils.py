@@ -1,12 +1,7 @@
 from pennylane import numpy as np
-import cmath
-import statistics
-import networkx as nx
-from itertools import combinations
-from collections import Counter
-import math, os, threading, time, sys
+import cmath, math, os, threading, time, sys
 from datetime import date
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 matchgateOnes = np.array([[1, 0, 0, 1],
                 [0, 1, 1, 0],
@@ -80,53 +75,7 @@ def compute_stats(numbers):
 
     return  most_common_element, most_common_element_count_ratio, mean, maximum, weighted_stddev
 
-def generate_all_graphs(n):
-    """ Generate all possible graphs with n vertices """
-    all_graphs = []
-    nodes = range(n)
-    
-    # Iterate over all possible combinations of edges
-    for num_edges in range(1,n*(n-1)//2 + 1):  # Maximum number of edges for n vertices 
 
-        all_graphs_with_num_edges = []
-
-        possible_edges = list(combinations(nodes, 2))
-        
-        # Generate all combinations of edges for the current num_edges
-        edges_combinations = [[edge for edge in combo] for combo in list(combinations(possible_edges, num_edges))]
-
-        # Filter out combinations that do not include all nodes
-        combinations_with_all_nodes = [
-            combo for combo in edges_combinations 
-            if set(nodes) <= set(node for edge in combo for node in edge)
-        ]
-
-        if not combinations_with_all_nodes:  # Check if the list is empty
-            continue  # Skip to the next iteration if the list is empty
-
-        
-        # Add graph from combination to list
-        
-        for combination in combinations_with_all_nodes:
-            G = nx.Graph()
-            G.add_nodes_from(nodes)
-            G.add_edges_from(combination)
-            graph_absent = True
-            # check if an isomorphic graph is already present. if so, increment the weight of that graph. If not, add first graph
-            for present_graph in all_graphs_with_num_edges:
-                if nx.is_isomorphic(present_graph[0],G):
-                    present_graph[1] += 1
-                    graph_absent = False
-                    break
-            
-            if graph_absent: #if no isomorphic graph found, add it with weight 1
-                all_graphs_with_num_edges.append([G,1])
-
-        edges_combination_weight = [(list(graph[0].edges()),graph[1]) for graph in all_graphs_with_num_edges]
-            
-        all_graphs.extend(edges_combination_weight)
-
-    return all_graphs
 
 def write_to_progress_file(text, start_time = None, slurm = True):
 
@@ -155,57 +104,57 @@ def write_to_slurm_output(message):
     # Force flush to ensure immediate output
     sys.stdout.flush()
 
-def plot_table_from_list_of_lists(list_of_lists, column_headers, title_text = ""):
-    footer_text = date.today()
-    fig_background_color = 'white'
-    fig_border = 'steelblue'
-    data =  list_of_lists
+# def plot_table_from_list_of_lists(list_of_lists, column_headers, title_text = ""):
+#     footer_text = date.today()
+#     fig_background_color = 'white'
+#     fig_border = 'steelblue'
+#     data =  list_of_lists
 
-    cell_text = []
-    for row in data:
-        cell_text.append([f'{str(x)}' for x in row])
-    # Get some lists of color specs for row and column headers
-    #rcolors = plt.cm.BuPu(np.full(len(row_headers), 0.1))
-    ccolors = plt.cm.BuPu(np.full(len(column_headers), 0.1))
+#     cell_text = []
+#     for row in data:
+#         cell_text.append([f'{str(x)}' for x in row])
+#     # Get some lists of color specs for row and column headers
+#     #rcolors = plt.cm.BuPu(np.full(len(row_headers), 0.1))
+#     ccolors = plt.cm.BuPu(np.full(len(column_headers), 0.1))
 
-    plt.figure(linewidth=2,
-            edgecolor=fig_border,
-            facecolor=fig_background_color,
-            tight_layout={'pad':1},
-            #figsize=(5,3)
-            )
-    # Add a table at the bottom of the axes
-    the_table = plt.table(cellText=cell_text,
-                        #rowLabels=row_headers,
-                        #rowColours=rcolors,
-                        rowLoc='right',
-                        colColours=ccolors,
-                        colLabels=column_headers,
-                        loc='center')
-    # Scaling is the only influence we have over top and bottom cell padding.
-    # Make the rows taller (i.e., make cell y scale larger).
-    the_table.scale(1, 1.5)
-    # Hide axes
-    ax = plt.gca()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-    # Hide axes border
-    plt.box(on=None)
-    # Add title
-    plt.suptitle(title_text)
-    # Add footer
-    plt.figtext(0.95, 0.05, footer_text, horizontalalignment='right', size=6, weight='light')
-    # Force the figure to update, so backends center objects correctly within the figure.
-    # Without plt.draw() here, the title will center on the axes and not the figure.
-    plt.draw()
-    # Create image. plt.savefig ignores figure edge and face colors, so map them.
-    fig = plt.gcf()
-    plt.savefig('pyplot-table-demo.png',
-                #bbox='tight',
-                edgecolor=fig.get_edgecolor(),
-                facecolor=fig.get_facecolor(),
-                dpi=150
-                )
+#     plt.figure(linewidth=2,
+#             edgecolor=fig_border,
+#             facecolor=fig_background_color,
+#             tight_layout={'pad':1},
+#             #figsize=(5,3)
+#             )
+#     # Add a table at the bottom of the axes
+#     the_table = plt.table(cellText=cell_text,
+#                         #rowLabels=row_headers,
+#                         #rowColours=rcolors,
+#                         rowLoc='right',
+#                         colColours=ccolors,
+#                         colLabels=column_headers,
+#                         loc='center')
+#     # Scaling is the only influence we have over top and bottom cell padding.
+#     # Make the rows taller (i.e., make cell y scale larger).
+#     the_table.scale(1, 1.5)
+#     # Hide axes
+#     ax = plt.gca()
+#     ax.get_xaxis().set_visible(False)
+#     ax.get_yaxis().set_visible(False)
+#     # Hide axes border
+#     plt.box(on=None)
+#     # Add title
+#     plt.suptitle(title_text)
+#     # Add footer
+#     plt.figtext(0.95, 0.05, footer_text, horizontalalignment='right', size=6, weight='light')
+#     # Force the figure to update, so backends center objects correctly within the figure.
+#     # Without plt.draw() here, the title will center on the axes and not the figure.
+#     plt.draw()
+#     # Create image. plt.savefig ignores figure edge and face colors, so map them.
+#     fig = plt.gcf()
+#     plt.savefig('pyplot-table-demo.png',
+#                 #bbox='tight',
+#                 edgecolor=fig.get_edgecolor(),
+#                 facecolor=fig.get_facecolor(),
+#                 dpi=150
+#                 )
 
 def format_job_name_from_result(job_result):
     graph_string = graph_to_string(job_result[2])

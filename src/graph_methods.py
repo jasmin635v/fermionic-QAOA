@@ -1,9 +1,7 @@
-import networkx as nx
-from itertools import combinations
-from itertools import groupby
-import math
-import time
-import matplotlib.pyplot as plt
+from pennylane import networkx as nx
+from itertools import combinations, groupby
+import math, time
+#import matplotlib.pyplot as plt
 
 # connected (no free vertices)  graphs with n nodes:
 
@@ -18,25 +16,25 @@ def plot_xylists(xy_lists):
     if num_subplots == 0:
         return
     
-    fig, axes = plt.subplots(num_subplots, 1, figsize=(8, 16))
+    #fig, axes = plt.subplots(num_subplots, 1, figsize=(8, 16))
 
     # Iterate over list_of_list_of_data and plot each list_of_data as a subplot
     for i, list_of_data in enumerate(xy_lists):
         title = list_of_data[0][2]
         x_values = [pair[0] for pair in list_of_data]
         y_values = [pair[1] for pair in list_of_data]
-        axes[i].scatter(x_values, y_values, color='blue', marker='o', s=50, alpha=0.8)
-        axes[i].set_title(f'Graph with {title} Vertices')
-        axes[i].set_xlabel('Number of edges')
-        axes[i].set_ylabel('Mean automorphism number')
-        axes[i].set_xlim(left=0)     
-        axes[i].grid(True)
+        # axes[i].scatter(x_values, y_values, color='blue', marker='o', s=50, alpha=0.8)
+        # axes[i].set_title(f'Graph with {title} Vertices')
+        # axes[i].set_xlabel('Number of edges')
+        # axes[i].set_ylabel('Mean automorphism number')
+        # axes[i].set_xlim(left=0)     
+        # axes[i].grid(True)
 
 
     # Adjust layout and display the plot
-    fig.subplots_adjust(hspace=1)
-    #plt.tight_layout()
-    plt.show()
+    # fig.subplots_adjust(hspace=1)
+    # plt.tight_layout()
+    # plt.show()
 
 def return_graph_from_combination(combination, nodes = None):
 
@@ -184,29 +182,29 @@ def draw_graph(combination , ax = None):
     # if ax is not None:
     #     ax.set_title(f"Combination: {combination}")
 
-def draw_graphs_in_grid(list_combinations):
-    num_plots = len(list_combinations)
-    num_cols = 3  # Number of columns in the grid of subplots
-    num_rows = (num_plots - 1) // num_cols + 1  # Calculate number of rows needed
+# def draw_graphs_in_grid(list_combinations):
+#     num_plots = len(list_combinations)
+#     num_cols = 3  # Number of columns in the grid of subplots
+#     num_rows = (num_plots - 1) // num_cols + 1  # Calculate number of rows needed
 
-    fig = plt.figure(figsize=(15, 5*num_rows))
-    # Create a gridspec for adding subplots of different sizes
-    axgrid = fig.add_gridspec(num_rows, num_cols)
+#     #fig = plt.figure(figsize=(15, 5*num_rows))
+#     # Create a gridspec for adding subplots of different sizes
+#     #axgrid = fig.add_gridspec(num_rows, num_cols)
 
-    # Draw each graph on its respective subplot and set title
-    for i, combination in enumerate(list_combinations):
-        row = i // num_cols
-        col = i % num_cols
-        ax = fig.add_subplot(axgrid[row, col])
-        draw_graph(combination, ax=ax)
-        ax.set_title(f"Combination {i+1}: {combination}")
+#     # Draw each graph on its respective subplot and set title
+#     for i, combination in enumerate(list_combinations):
+#         row = i // num_cols
+#         col = i % num_cols
+#         #ax = fig.add_subplot(axgrid[row, col])
+#         #draw_graph(combination, ax=ax)
+#         #ax.set_title(f"Combination {i+1}: {combination}")
 
-    # Hide any extra subplot axes if there are more axes than plots
-    for j in range(num_plots, num_rows * num_cols):
-        fig.delaxes(fig.axes[j])  # Delete extra axes that are not used
+#     # Hide any extra subplot axes if there are more axes than plots
+#     for j in range(num_plots, num_rows * num_cols):
+#         #fig.delaxes(fig.axes[j])  # Delete extra axes that are not used
 
-    fig.tight_layout()
-    plt.show()
+#     #fig.tight_layout()
+#    # plt.show()
 
 def test_combination_list():
     test_combination1 = [(0,1),(0,2),(2,3),(4,3),(4,1)]
@@ -241,3 +239,50 @@ def generate_string_graph_representation(graph):
 
     return result_strings
 
+def generate_all_graphs(n):
+    """ Generate all possible graphs with n vertices """
+    all_graphs = []
+    nodes = range(n)
+    
+    # Iterate over all possible combinations of edges
+    for num_edges in range(1,n*(n-1)//2 + 1):  # Maximum number of edges for n vertices 
+
+        all_graphs_with_num_edges = []
+
+        possible_edges = list(combinations(nodes, 2))
+        
+        # Generate all combinations of edges for the current num_edges
+        edges_combinations = [[edge for edge in combo] for combo in list(combinations(possible_edges, num_edges))]
+
+        # Filter out combinations that do not include all nodes
+        combinations_with_all_nodes = [
+            combo for combo in edges_combinations 
+            if set(nodes) <= set(node for edge in combo for node in edge)
+        ]
+
+        if not combinations_with_all_nodes:  # Check if the list is empty
+            continue  # Skip to the next iteration if the list is empty
+
+        
+        # Add graph from combination to list
+        
+        for combination in combinations_with_all_nodes:
+            G = nx.Graph()
+            G.add_nodes_from(nodes)
+            G.add_edges_from(combination)
+            graph_absent = True
+            # check if an isomorphic graph is already present. if so, increment the weight of that graph. If not, add first graph
+            for present_graph in all_graphs_with_num_edges:
+                if nx.is_isomorphic(present_graph[0],G):
+                    present_graph[1] += 1
+                    graph_absent = False
+                    break
+            
+            if graph_absent: #if no isomorphic graph found, add it with weight 1
+                all_graphs_with_num_edges.append([G,1])
+
+        edges_combination_weight = [(list(graph[0].edges()),graph[1]) for graph in all_graphs_with_num_edges]
+            
+        all_graphs.extend(edges_combination_weight)
+
+    return all_graphs

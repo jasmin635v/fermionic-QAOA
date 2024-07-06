@@ -1,20 +1,13 @@
 import pennylane as qml
 from pennylane import numpy as np
 import math
-import cmath
 from QAOA_utils import *
-from graph import *
+from graph_methods import *
 from collections import Counter
 from collections import namedtuple
 
-JobResult = namedtuple('JobResult', ['cost_layer', 'label','graph','most_sampled_value','most_sampled_value_ratio','mean','maximum','stdev','parameters'])
+#JobResult = namedtuple('JobResult', ['cost_layer', 'label','graph','most_sampled_value','most_sampled_value_ratio','mean','maximum','stdev','parameters'])
 QAOAResult = namedtuple('QAOAResult', ['bit_strings_objectives_distribution', 'parameters'])
-# connected  graphs with n nodes:
-
-#Nodes     2   3    4      5        6          7            8              9
-#Unlabeled 1,  2,   6,    21,     112,       853,       11117,         261080
-#Labeled   4, 38, 728, 26704, 1866256, 251548592, 66296291072, 34496488594816
-
 
 def qaoa_maxcut(graph, n_wires, n_layers, cost_layer = "QAOA", n_steps = 30, n_samples = 200, lightning_device = True, mixer_layer = "fermionic_Ryy"):
     #[isomorph_graph,n_vertices, n_layers, "QAOA", f"isomorphGraph{ii}_{graph_to_string(graph)}", n_steps, n_samples]
@@ -45,8 +38,6 @@ def qaoa_maxcut(graph, n_wires, n_layers, cost_layer = "QAOA", n_steps = 30, n_s
 
     for i in range(n_steps):
         params = opt.step(objective, params)
-        # if (i + 1) % 5 == 0:
-        #     print("Objective after step {:5d}: {: .7f}".format(i + 1, -objective(params)))
                    
     # sample measured bitstrings 100 times
     bit_strings = sample_bitstrings(graph,n_wires,gammas=params[0], betas = params[1], n_samples= n_samples, n_layers= n_layers)
@@ -74,7 +65,7 @@ def sample_bitstrings(graph, n_wires, gammas, betas, n_samples, n_layers=1, ligh
 
 def circuit(graph, n_wires, gammas, betas, edge=None, n_layers=1):
 
-    #one mixer application instead of hadamard gates
+    #one mixer application to create superposition
     U_B(graph, n_wires, gammas[0])
 
     # p instances of unitary operators
@@ -112,17 +103,16 @@ def circuit_samples(graph, n_wires, gammas, betas, n_layers=1, lightning_device 
 
 # mixer layer
 def U_B(graph, n_wires, beta):    
-    #fRyy(pi/2,pi/2) for next qbits mixer (Jasmin)
+    #fRyy(pi/2,pi/2) for next qbits mixer 
     for wire in range(n_wires-1):
         qml.QubitUnitary(fRyy, wires=[wire, wire+1])
 
 # cost layer
 def U_C(graph, gamma, option = "QAOA"):
 
-    #set Gamma = pi/2
-    fixed_gamma = math.pi  #todo: check pi/2
+    fixed_gamma = math.pi  
 
-    if option == "QAOA": # regular QAOA algorithm  cost layer
+    if option == "QAOA": # regular QAOA algorithm cost layer
         for edge in graph:               
             wire1 = edge[0]
             wire2 = edge[1]
@@ -130,7 +120,7 @@ def U_C(graph, gamma, option = "QAOA"):
             qml.RZ(gamma, wires=wire2)
             qml.CNOT(wires=[wire1, wire2])
 
-    elif option == "swapQAOA": # regular QAOA algorithm cost layer but with swap
+    elif option == "swapQAOA": # regular QAOA algorithm cost layer but with swap up to neighbor operation
         for edge in graph:
 
             #pick the edge with smallest index
@@ -156,7 +146,7 @@ def U_C(graph, gamma, option = "QAOA"):
             for vertice in reversed(range(first_edge, last_edge)):                          
                 qml.SWAP(wires=[vertice, vertice+1])
     
-    elif option == "fQAOA": # fermi QAOA algorithm cost layer with fswaps
+    elif option == "fQAOA": # fermi QAOA algorithm cost layer with fswaps 
         for edge in graph:
 
             #pick the edge with smallest index
