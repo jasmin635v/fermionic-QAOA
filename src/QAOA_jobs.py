@@ -11,7 +11,7 @@ def execute_job_parallel(job):
     start_time = time.time()
     write_to_progress_file(f"starting job:{method}_{identifier}_{n_vertices}-vertices_{n_layers}-layers")
     result = execute_qaoa_subjob1(graph, n_vertices, n_layers, method, identifier, n_steps, n_samples)
-    write_to_progress_file(f"done job: {method}_{identifier}_{n_vertices}-vertices_{n_layers}-layers")
+    write_to_progress_file(f"done job: {method}_{identifier}_{n_vertices}-vertices_{n_layers}-layers. time taken: {time.time() - start_time}")
     return result
 
 def run_jobs(all_jobs):
@@ -103,8 +103,8 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
             isomorphic_graphs = graph_methods.generate_isomorphics_from_combination(graph,max_isomorphism_number=n_isomorph_max)
             isomorphic_graphs = isomorphic_graphs[1:] #the first generated isomorphic graph is identity
             for ij, isomorph_graph in enumerate(isomorphic_graphs):                   
-                job_lists_iso.append([isomorph_graph,n_vertices, n_layers, "QAOA", f"isomorphGraph{ii}_{graph_to_string(graph)}", n_steps, n_samples])
-                job_lists_iso.append([isomorph_graph,n_vertices, n_layers, "fQAOA", f"isomorphGraph{ii}_{graph_to_string(graph)}", n_steps, n_samples])
+                job_lists_iso.append([isomorph_graph,n_vertices, n_layers, "QAOA", f"isomorphGraph{ij}_{graph_to_string(graph)}", n_steps, n_samples])
+                job_lists_iso.append([isomorph_graph,n_vertices, n_layers, "fQAOA", f"isomorphGraph{ij}_{graph_to_string(graph)}", n_steps, n_samples])
 
         all_jobs = job_lists_QAOA + job_lists_fQAOA + job_lists_iso
         return all_jobs
@@ -125,6 +125,7 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
     if max_job != None: #limit to amount of graph number if needed. TB Implemented: sampling according to weight
         all_jobs = all_jobs[:max_job]
 
+    results_list = []
     if not parallel_task:
         results_list = run_jobs(all_jobs)
     else:
@@ -132,6 +133,7 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
 
     #results_list = calculate_ratios_from_results_list(results_list)
     results_list = calculate_add_ratios_to_results_list(results_list)
+    results_list = [["cost_layer","label", "graph", "most_common_element", "most_common_element_count_ratio", "mean", "maximum", "stdev", "layer parameters"]] + results_list
 
     formatted_datatime = datetime.now().strftime("%m%d%H%M")
     #np.savetxt(f"/home/jcjcp/scratch/jcjcp/QAOA/MaxCut/src/pkg/qaoa_job1_{formatted_datatime}.txt", results_list, fmt='%s', delimiter='\t')

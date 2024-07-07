@@ -1,7 +1,8 @@
 from pennylane import numpy as np
 import cmath, math, os, threading, time, sys
 from datetime import date
-#import matplotlib.pyplot as plt
+import argparse
+
 
 matchgateOnes = np.array([[1, 0, 0, 1],
                 [0, 1, 1, 0],
@@ -23,6 +24,49 @@ filename = os.path.join(current_directory, 'progress.txt')
 file_lock = threading.Lock()
 default=os.path.join(os.path.dirname(__file__), "data")
 
+
+def parse_args(parser=None):
+    if parser is None:
+        parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--n_samples",
+        type=int,
+        nargs="+",
+        default=100,
+        help="the number of times the circuit is sampled after the parameters are found",
+    )
+    parser.add_argument(
+        "--n_layers",
+        type=int,
+        nargs="+",
+        default=4,
+        help="The number of mixer / cost layers.",
+    )
+    parser.add_argument(
+        "--n_qubits",
+        type=int,
+        default=4,
+        help="The number of vertices or qbits of the circuit",
+    )
+    parser.add_argument(
+        "--n_steps",
+        type=int,
+        default=20,
+        help="The number of steps of the layer parameter optimizer.",
+    )
+    parser.add_argument(
+        "--max_isomorph_number",
+        type=int,
+        default=3,
+        help="The max number of isomorphic graphs to compute per unlabeled graph.",
+    )
+    parser.add_argument(
+        "--max_job",
+        type=int,
+        default=-1,
+        help="The max number of jobs / graphs to solve (first n taken)).",
+    )
+    return parser.parse_args()
 
 def Rzz_matrice(gamma):
     exp_term = cmath.exp(1j * gamma/ 2)
