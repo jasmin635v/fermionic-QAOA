@@ -38,7 +38,7 @@ def qaoa_maxcut(graph, n_wires, n_layers, cost_layer = "QAOA", n_steps = 30, n_s
 
     for i in range(n_steps):
         params = opt.step(objective, params)
-        print(f"step {i} on {n_steps}" for {cost_layer}_{QAOA_utils.graph})
+        print(f"step {i} on {n_steps} for {cost_layer}_{graph_to_string(graph)}")
                    
     # sample measured bitstrings 100 times
     bit_strings = sample_bitstrings(graph,n_wires,gammas=params[0], betas = params[1], n_samples= n_samples, n_layers= n_layers)
