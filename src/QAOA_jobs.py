@@ -122,7 +122,7 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
     all_jobs = generate_job_list_job1(unlabeled_graphs_graphs, n_layers, n_steps, n_samples)
     job_count = 0
 
-    if max_job != None: #limit to amount of graph number if needed. TB Implemented: sampling according to weight
+    if max_job != -1: #limit to amount of graph number if needed. TB Implemented: sampling according to weight
         all_jobs = all_jobs[:max_job]
 
     results_list = []
