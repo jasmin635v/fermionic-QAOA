@@ -8,7 +8,7 @@ from functools import partial
 
 def execute_job_parallel(job):
     graph, n_vertices, n_layers, method, identifier, n_steps, n_samples = job
-    start_time = time.time()
+    #start_time = time.time()
     #write_to_progress_file(f"starting job:{method}_{identifier}_{n_vertices}-vertices_{n_layers}-layers")
     result = execute_qaoa_subjob1(graph, n_vertices, n_layers, method, identifier, n_steps, n_samples)
     #write_to_progress_file(f"done job: {method}_{identifier}_{n_vertices}-vertices_{n_layers}-layers. time taken: {time.time() - start_time}")
@@ -88,12 +88,12 @@ def execute_qaoa_subjob1(graph,n_vertices, n_layers, cost_layer, label, n_steps 
     elapsed_time_formatted = f"{int(elapsed_time_seconds // 60)} mins {int(elapsed_time_seconds % 60)} secs"
 
     #chi squared
-    return [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters)]
+    return [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters),elapsed_time_formatted]
 
 def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):
     
     start_time = time.time()
-    write_to_progress_file(f"start of QAOA - job1")
+    #write_to_progress_file(f"start of QAOA - job1")
 
     def generate_job_list_job1(isomorphic_graph_lists, n_layers, n_steps, n_samples):
         job_lists_QAOA = [[graph,n_vertices, n_layers,"QAOA", f"unlabeledGraph_{graph_to_string(graph)}", n_steps, n_samples] for graph in isomorphic_graph_lists]
@@ -133,7 +133,7 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
 
     #results_list = calculate_ratios_from_results_list(results_list)
     results_list = calculate_add_ratios_to_results_list(results_list)
-    results_list = [["cost_layer","label", "graph", "most_common_element", "most_common_element_count_ratio", "mean", "maximum", "stdev", "layer parameters"]] + results_list
+    results_list = [["cost_layer","label", "graph", "most_common_element", "most_common_element_count_ratio", "mean", "maximum", "stdev", "layer parameters", "run time"]] + results_list
 
     formatted_datatime = datetime.now().strftime("%m%d%H%M")
     #np.savetxt(f"/home/jcjcp/scratch/jcjcp/QAOA/MaxCut/src/pkg/qaoa_job1_{formatted_datatime}.txt", results_list, fmt='%s', delimiter='\t')
