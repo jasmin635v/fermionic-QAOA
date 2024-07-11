@@ -119,7 +119,7 @@ def compute_stats(numbers):
 
 
 
-def write_to_progress_file(text, start_time = None, slurm = True):
+def write_to_progress_file(text, start_time = None, slurm = True, fileName = None):
 
     if start_time != None:
         end_time = time.time()
