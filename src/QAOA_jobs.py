@@ -137,9 +137,13 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
     # Calculate the mean of the "run time" values
     mean_run_time = sum(run_times) / (len(run_times) * len(run_times))
     results_list = [["cost_layer","label", "graph", "most_common_element", "most_common_element_count_ratio", "mean", "maximum", "stdev", "layer parameters", "run time"]] + results_list
-    txt_str = [mean_run_time]+ " " +results_list
+    num_threads = os.getenv("OMP_NUM_THREADS", "not set")
+
+
+    txt_str = ["mean run time: " + str(mean_run_time) + " OMP_NUM_THREADS: " + str(num_threads)]+ results_list
     
     formatted_datatime = datetime.now().strftime("%H%M")
+
     #np.savetxt(f"/home/jcjcp/scratch/jcjcp/QAOA/MaxCut/src/pkg/qaoa_job1_{formatted_datatime}.txt", results_list, fmt='%s', delimiter='\t')
     #n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True
     np.savetxt(f"qaoa_job1_{formatted_datatime}_vert_{n_vertices}_lay_{n_layers}_steps_{n_steps}_iso_{n_isomorph_max}_maxg_{str(max_unlabeled_graph)}_maxjob_{str(max_job)}.txt", txt_str, fmt='%s', delimiter='\t')
