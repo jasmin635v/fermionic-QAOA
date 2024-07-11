@@ -19,10 +19,10 @@ fRyy = 1 / np.sqrt(2) * np.array([[1, 0, 0, -1],
                     [0, 1, 1, 0],
                     [1, 0, 0, 1]])
 
-current_directory = os.path.dirname(os.path.realpath(__file__))
-filename = os.path.join(current_directory, 'progress.txt')
-file_lock = threading.Lock()
-default=os.path.join(os.path.dirname(__file__), "data")
+# current_directory = os.path.dirname(os.path.realpath(__file__))
+# filename = os.path.join(current_directory, 'progress.txt')
+# file_lock = threading.Lock()
+# default=os.path.join(os.path.dirname(__file__), "data")
 
 
 def parse_args(parser=None):
@@ -126,12 +126,12 @@ def write_to_progress_file(text, start_time = None, slurm = True, fileName = Non
         formatted_time = format_time(int(end_time - start_time))
         text += f" time taken: {formatted_time}. Time: {end_time} "
 
-    with file_lock:
-        if slurm:
-            write_to_slurm_output(text)
-        else:
-            with open(filename, 'a') as f:
-                f.write(f'{text}\n')
+    # with file_lock:
+    #     if slurm:
+    #         write_to_slurm_output(text)
+    #     else:
+    #         with open(filename, 'a') as f:
+    #             f.write(f'{text}\n')
 
 def format_time(seconds):
     """
