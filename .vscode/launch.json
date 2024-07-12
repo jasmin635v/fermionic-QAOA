@@ -13,13 +13,14 @@
                 "--n_samples", "100",
                 "--n_layers", "4",
                 "--n_qubits", "4",
-                "--n_steps", "20",
+                "--n_steps", "5",
                 "--max_isomorph_number", "2",
-                "--max_job", "-1",
-                "--job_name","job1_execute_slurmarray",
+                "--max_job", "2",
+                "--job_name","job1_process_results",  //#job1_generate //job1_execute_slurmarray //job1_process_results
                 "--task_id","1"
             ],
             "console": "integratedTerminal"
         }
     ]
 }
+

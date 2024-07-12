@@ -124,7 +124,7 @@ def generate_job_list_job1(isomorphic_graph_lists, n_layers, n_steps, n_samples,
     
     return all_jobs
 
-def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):
+def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
     np.random.seed(42)
     unlabeled_graphs = graph_methods.generate_all_connected_graphs(n_vertices, True)
     print(f"graphs generated")
@@ -153,7 +153,7 @@ def job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled
     process_results_save(results_list, jobnames)
 
 def job1_generate_save_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):
-    all_jobs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True)
+    all_jobs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
     job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
     store_jobs(all_jobs,job_names)
 
@@ -225,6 +225,9 @@ def retrieve_single_job_result(resultname):
     # Save the array to a .npy file
     full_path = os.path.join(subdirectory, f"{resultname}.npy")
 
+    if not os.path.exists(full_path):
+        return
+
     # Load the NumPy array from the file
     loaded_array = np.load(full_path)
 
@@ -263,6 +266,10 @@ def job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isom
     for job in all_jobs:
         resultname = get_result_name_from_job(job)
         result = retrieve_single_job_result(resultname)
+
+        if result is None:
+            continue
+
         results_list.append(result)
     
     return results_list
@@ -274,18 +281,24 @@ def job1_process_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_ma
 
 def process_results_save(results_list, jobnames):
     #results_list = calculate_ratios_from_results_list(results_list)
-    run_times = [float(element[-1]) for element in results_list]
+    #run_times = [float(element[-1]) for element in results_list]
     results_list = calculate_add_ratios_to_results_list(results_list)
     
     # Calculate the mean of the "run time" values
-    mean_run_time = sum(run_times) / (len(run_times) * len(run_times))
+    # mean_run_time = sum(run_times) / (len(run_times) * len(run_times))
     results_list = [["cost_layer","label", "graph", "most_common_element", "most_common_element_count_ratio", "mean", "maximum", "stdev", "layer parameters", "run time"]] + results_list
-    num_threads = os.getenv("OMP_NUM_THREADS", "not set")
+    #num_threads = os.getenv("OMP_NUM_THREADS", "not set")
 
-    txt_str = ["mean run time: " + str(mean_run_time) + " OMP_NUM_THREADS: " + str(num_threads)]+ results_list   
-    formatted_datatime = datetime.now().strftime("%H%M")
-
+    # Define the subdirectory name
     subdirectory = "merged_processed_results"
-    file_path = os.path.join(subdirectory, jobnames+".txt")
 
-    np.savetxt(file_path, txt_str, fmt='%s', delimiter='\t')
+    # Ensure the subdirectory exists
+    if not os.path.exists(subdirectory):
+        os.makedirs(subdirectory)
+
+    # Construct the file path
+    file_path = os.path.join(subdirectory, jobnames + ".txt")
+
+    # Save the results list to the specified file
+    np.savetxt(file_path, results_list, fmt='%s', delimiter='\t')
+
