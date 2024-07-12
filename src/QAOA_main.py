@@ -8,8 +8,8 @@ if __name__ == '__main__':
     freeze_support() 
     args = parse_args()
 
-    n_samples = args.n_samples  # Assuming you want the first value if nargs="+"
-    n_layers = args.n_layers    # Assuming you want the first value if nargs="+"
+    n_samples = args.n_samples  
+    n_layers = args.n_layers   
     n_qubits = args.n_qubits
     n_steps = args.n_steps
     max_isomorph_number = args.max_isomorph_number

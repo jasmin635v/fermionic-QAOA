@@ -10,7 +10,9 @@ def execute_job_parallel(job):
     graph, n_vertices, n_layers, method, identifier, n_steps, n_samples = job
     #start_time = time.time()
     #write_to_progress_file(f"starting job:{method}_{identifier}_{n_vertices}-vertices_{n_layers}-layers")
+    print(f"    into job execution of {identifier} ")  
     result = execute_qaoa_subjob1(graph, n_vertices, n_layers, method, identifier, n_steps, n_samples)
+    print(f"    end of job execution of {identifier} ")  
     #write_to_progress_file(f"done job: {method}_{identifier}_{n_vertices}-vertices_{n_layers}-layers. time taken: {time.time() - start_time}")
     return result
 
@@ -78,15 +80,16 @@ def calculate_add_ratios_to_results_list(results_list):
 
 def execute_qaoa_subjob1(graph,n_vertices, n_layers, cost_layer, label, n_steps = 30, n_samples = 200): 
     #[isomorph_graph,n_vertices, n_layers, "QAOA", f"isomorphGraph{ii}_{graph_to_string(graph)}", n_steps, n_samples]
+    print(f"    start of job execution of {label} (inner method)")  
     np.random.seed(42)
     start_time = time.time() #(graph, n_wires, n_layers, cost_layer = "QAOA", n_steps = 30, n_samples = 200, lightning_device = True, mixer_layer = "fermionic_Ryy"):
-    graph_results = QAOA.qaoa_maxcut(graph, n_vertices,n_layers, cost_layer=cost_layer , n_steps = n_steps, n_samples = n_samples) #n_layer = n_vertices
+    graph_results = QAOA.qaoa_maxcut(graph, n_vertices,n_layers, cost_layer=cost_layer , n_steps = n_steps, n_samples = n_samples, label=label) #n_layer = n_vertices
     graph_results_distribution, graph_results_parameters  = graph_results.bit_strings_objectives_distribution, graph_results.parameters
     most_common_element, most_common_element_count_ratio, mean, maximum, stdev = compute_stats(graph_results_distribution)
 
     elapsed_time_seconds = time.time() - start_time
     elapsed_time_formatted = f"{int(elapsed_time_seconds // 60)} mins {int(elapsed_time_seconds % 60)} secs"
-
+    print(f"    end of job execution of {label}, time elapsed: {elapsed_time_formatted} ")  
     #chi squared
     return [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters),elapsed_time_formatted]
 
@@ -107,6 +110,7 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
                 job_lists_iso.append([isomorph_graph,n_vertices, n_layers, "fQAOA", f"isomorphGraph{ij}_{graph_to_string(graph)}", n_steps, n_samples])
 
         all_jobs = job_lists_QAOA + job_lists_fQAOA + job_lists_iso
+        print(f"jobs created, number of jobs:  {len(all_jobs)}. Max Jobs: {max_job} (no lim: -1)")
         return all_jobs
 
     np.random.seed(42)
@@ -114,7 +118,8 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
     write_to_progress_file(f"graphs generated")
 
     unlabeled_graphs_graphs = [graph[0] for graph in unlabeled_graphs]
-    unlabeled_graph_number = len(unlabeled_graphs_graphs)      
+    unlabeled_graph_number = len(unlabeled_graphs_graphs)
+    print(f"number of unlabeled graphs:  {unlabeled_graph_number}")      
 
     if max_unlabeled_graph != None: #limit to amount of unlabeled graph number if needed. TB Implemented: sampling according to weight
         unlabeled_graphs_graphs = unlabeled_graphs_graphs[:max_unlabeled_graph]
@@ -127,8 +132,10 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
 
     results_list = []
     if not parallel_task:
+        print(f"jobs start not in parallel")   
         results_list = run_jobs(all_jobs)
     else:
+        print(f"jobs start in parallel")   
         results_list = run_jobs_parallel(all_jobs)
 
     #results_list = calculate_ratios_from_results_list(results_list)

@@ -9,7 +9,7 @@ from collections import namedtuple
 #JobResult = namedtuple('JobResult', ['cost_layer', 'label','graph','most_sampled_value','most_sampled_value_ratio','mean','maximum','stdev','parameters'])
 QAOAResult = namedtuple('QAOAResult', ['bit_strings_objectives_distribution', 'parameters'])
 
-def qaoa_maxcut(graph, n_wires, n_layers, cost_layer = "QAOA", n_steps = 30, n_samples = 200, lightning_device = True, mixer_layer = "fermionic_Ryy"):
+def qaoa_maxcut(graph, n_wires, n_layers, cost_layer = "QAOA", n_steps = 30, n_samples = 200, lightning_device = True, mixer_layer = "fermionic_Ryy", label = None):
     #[isomorph_graph,n_vertices, n_layers, "QAOA", f"isomorphGraph{ii}_{graph_to_string(graph)}", n_steps, n_samples]
     # initialize the parameters near zero
     init_params = 0.01 * np.random.rand(2, n_layers, requires_grad=True)
@@ -38,7 +38,7 @@ def qaoa_maxcut(graph, n_wires, n_layers, cost_layer = "QAOA", n_steps = 30, n_s
 
     for i in range(n_steps):
         params = opt.step(objective, params)
-        print(f"step {i} on {n_steps} for {cost_layer}_{graph_to_string(graph)}")
+        print(f"        optim. step {i} on {n_steps} for {label}")
                    
     # sample measured bitstrings 100 times
     bit_strings = sample_bitstrings(graph,n_wires,gammas=params[0], betas = params[1], n_samples= n_samples, n_layers= n_layers)
