@@ -15,4 +15,4 @@ if __name__ == '__main__':
     max_isomorph_number = args.max_isomorph_number
     max_job = args.max_job
 
-    QAOA_jobs.execute_qaoa_job1(n_vertices = n_qubits, n_layers = n_layers, n_samples = n_samples, n_steps = n_steps, n_isomorph_max = max_isomorph_number, max_job=max_job, parallel_task=True)
+    QAOA_jobs.qaoa_job1(n_vertices = n_qubits, n_layers = n_layers, n_samples = n_samples, n_steps = n_steps, n_isomorph_max = max_isomorph_number, max_job=max_job, parallel_task=True)

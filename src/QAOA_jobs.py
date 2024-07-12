@@ -94,15 +94,10 @@ def execute_qaoa_subjob1(graph,n_vertices, n_layers, cost_layer, label, n_steps 
     #chi squared
     return [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters),elapsed_time_formatted]
 
-def generate_store_graphs_job1(n_vertices, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
-
-    all_jobs = generate_jobs1(n_vertices, n_isomorph_max, max_unlabeled_graph= None, max_job = None, n_steps= "no steps", n_samples="no samples", n_layers="no layers")
-    print(f"jobs created, number of jobs:  {len(all_jobs)}. Max Jobs: {max_job} (no lim: -1)")
-    print("extracting graph and label from job")
-    graphs_labels_from_jobs = [[graph_to_string(job[0]),job[4]] for job in all_jobs]
+def store_jobs(jobs, job_names):
 
     #create the corresponding directory
-    subdirectory = f"graphs_vertices_{n_vertices}_isomax_{n_isomorph_max}_maxunlab_{str(max_unlabeled_graph)}_maxjob_{str(max_job)}"
+    subdirectory = "stored_jobs"
 
     # Check if the subdirectory exists and create it if it doesn't
     if not os.path.exists(subdirectory):
@@ -110,13 +105,12 @@ def generate_store_graphs_job1(n_vertices, n_isomorph_max, max_unlabeled_graph= 
 
     json_file_path = os.path.join(subdirectory, 'graph_labels.json')
     with open(json_file_path, 'w') as f:
-        json.dump(graphs_labels_from_jobs, f)
+        json.dump(jobs, f)
 
-def retrieved_stored_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
+def retrieved_stored_jobs(job_names):
 
-    subdirectory = f"graphs_vertices_{n_vertices}_isomax_{n_isomorph_max}_maxunlab_{str(max_unlabeled_graph)}_maxjob_{str(max_job)}"
-    json_file_name  = "graph_labels.json"
-    json_file_path = os.path.join(subdirectory, json_file_name)
+    subdirectory  = "stored_jobs"
+    json_file_path = os.path.join(subdirectory, job_names)
 
     #Open the JSON file and load the data
     with open(json_file_path, 'r') as f:
@@ -151,26 +145,30 @@ def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max
     if max_unlabeled_graph != None: #limit to amount of unlabeled graph number if needed. TB Implemented: sampling according to weight
         unlabeled_graphs_graphs = unlabeled_graphs_graphs[:max_unlabeled_graph]
 
-    all_jobs = generate_job_list_job1(unlabeled_graphs_graphs, n_layers, n_steps, n_samples, n_vertices)
+    all_jobs = generate_job_list_job1(unlabeled_graphs_graphs, n_layers, n_steps, n_samples, n_vertices, n_isomorph_max)
     print(f"jobs created, number of jobs:  {len(all_jobs)}. Max Jobs: {max_job} (no lim: -1)")
     job_count = 0
 
     if max_job != -1: #limit to amount of graph number if needed. TB Implemented: sampling according to weight
         all_jobs = all_jobs[:max_job]
 
-def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):
+def qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):
     
     start_time = time.time()
     print("start of QAOA - job1")
 
     all_jobs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True)
+    execute_jobs_save_results(all_jobs, f"jobs1_vertices_{n_vertices}_layers_{n_layers}_steps_{n_steps}_samples_{n_samples}_isomorphmax_{str(n_isomorph_max)}_maxunlabeled_{str(max_unlabeled_graph)}_maxjob_{str(max_job)}")
+
+
+def execute_jobs_save_results(jobs, jobnames="job_"+datetime.now().strftime("%H%M%S"), parallel_task= True):
     results_list = []
     if not parallel_task:
         print(f"jobs start not in parallel")   
-        results_list = run_jobs(all_jobs)
+        results_list = run_jobs(jobs)
     else:
         print(f"jobs start in parallel")   
-        results_list = run_jobs_parallel(all_jobs)
+        results_list = run_jobs_parallel(jobs)
 
     #results_list = calculate_ratios_from_results_list(results_list)
     run_times = [float(element[-1]) for element in results_list]
@@ -186,5 +184,4 @@ def execute_qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, 
 
     #np.savetxt(f"/home/jcjcp/scratch/jcjcp/QAOA/MaxCut/src/pkg/qaoa_job1_{formatted_datatime}.txt", results_list, fmt='%s', delimiter='\t')
     #n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True
-    np.savetxt(f"qaoa_job1_{formatted_datatime}_vert_{n_vertices}_lay_{n_layers}_steps_{n_steps}_iso_{n_isomorph_max}_maxg_{str(max_unlabeled_graph)}_maxjob_{str(max_job)}.txt", txt_str, fmt='%s', delimiter='\t')
-
+    np.savetxt(jobnames, txt_str, fmt='%s', delimiter='\t')
