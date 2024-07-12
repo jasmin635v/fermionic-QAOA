@@ -16,7 +16,7 @@
                 "--n_steps", "5",
                 "--max_isomorph_number", "2",
                 "--max_job", "2",
-                "--job_name","job1_process_results",  //#job1_generate //job1_execute_slurmarray //job1_process_results
+                "--job_name","job1_generate",  //#job1_generate //job1_execute_slurmarray //job1_process_results
                 "--task_id","1"
             ],
             "console": "integratedTerminal"
