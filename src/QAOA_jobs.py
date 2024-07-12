@@ -43,19 +43,6 @@ def run_jobs_parallel(all_jobs):
 
     return results
 
-# def run_jobs_parallel_threadpoolexecutor(all_jobs):
-
-#         results_list = []
-
-#         with ThreadPoolExecutor() as executor:
-#             futures = [executor.submit(execute_job_parallel, job) for job in all_jobs]
-
-#         # Collect results as they are completed
-#         for future in as_completed(futures):
-#             results_list.append(future.result())
-                    
-#         return results_list  
-
 def calculate_add_ratios_to_results_list(results_list):
     fQAOA_list = [entry for entry in results_list if entry[0] == 'fQAOA']
     QAOA_list = [entry for entry in results_list if entry[0] == 'QAOA']
@@ -103,20 +90,24 @@ def store_jobs(jobs, job_names):
     if not os.path.exists(subdirectory):
         os.makedirs(subdirectory)
 
-    json_file_path = os.path.join(subdirectory, 'graph_labels.json')
+    json_file_path = os.path.join(subdirectory, f"{job_names}.json")
     with open(json_file_path, 'w') as f:
         json.dump(jobs, f)
 
-def retrieved_stored_jobs(job_names):
+def retrieve_stored_jobs(job_names):
 
     subdirectory  = "stored_jobs"
-    json_file_path = os.path.join(subdirectory, job_names)
+    json_file_path = os.path.join(subdirectory, f"{job_names}.json")
 
     #Open the JSON file and load the data
     with open(json_file_path, 'r') as f:
         data = json.load(f)
 
     return data
+
+def get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
+    job_names = f"job1-vertices_{n_vertices}_layers_{n_layers}_isomorphmax_{str(n_isomorph_max)}_maxunlabeledgraph_{str(max_unlabeled_graph)}_maxjob_{max_job}"
+    return job_names
 
 def generate_job_list_job1(isomorphic_graph_lists, n_layers, n_steps, n_samples, n_vertices, n_isomorph_max):
     job_lists_QAOA = [[graph,n_vertices, n_layers,"QAOA", f"unlabeledGraph_{graph_to_string(graph)}", n_steps, n_samples] for graph in isomorphic_graph_lists]
@@ -152,16 +143,31 @@ def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max
     if max_job != -1: #limit to amount of graph number if needed. TB Implemented: sampling according to weight
         all_jobs = all_jobs[:max_job]
 
-def qaoa_job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):
-    
-    start_time = time.time()
+    return all_jobs
+
+def job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):        
     print("start of QAOA - job1")
-
     all_jobs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True)
-    execute_jobs_save_results(all_jobs, f"jobs1_vertices_{n_vertices}_layers_{n_layers}_steps_{n_steps}_samples_{n_samples}_isomorphmax_{str(n_isomorph_max)}_maxunlabeled_{str(max_unlabeled_graph)}_maxjob_{str(max_job)}")
+    jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None)
+    results_list = execute_mp_jobs(all_jobs)
+    process_results_save(results_list, jobnames)
 
+def job1_generate_save_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):
+    all_jobs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True)
+    job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    store_jobs(all_jobs,job_names)
 
-def execute_jobs_save_results(jobs, jobnames="job_"+datetime.now().strftime("%H%M%S"), parallel_task= True):
+def job1_retrieve_execute_mp_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):
+    all_jobs = job1_retrieve_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None)
+    job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None)
+    execute_mp_jobs_save_results(all_jobs,job_names)
+
+def job1_retrieve_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
+    job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    all_jobs = retrieve_stored_jobs(job_names)
+    return all_jobs
+
+def execute_mp_jobs(jobs, parallel_task = True):
     results_list = []
     if not parallel_task:
         print(f"jobs start not in parallel")   
@@ -169,7 +175,11 @@ def execute_jobs_save_results(jobs, jobnames="job_"+datetime.now().strftime("%H%
     else:
         print(f"jobs start in parallel")   
         results_list = run_jobs_parallel(jobs)
+    return results_list
 
+#def execute_slurmarray_jobs(jobs):
+
+def process_results_save(results_list, jobnames):
     #results_list = calculate_ratios_from_results_list(results_list)
     run_times = [float(element[-1]) for element in results_list]
     results_list = calculate_add_ratios_to_results_list(results_list)
