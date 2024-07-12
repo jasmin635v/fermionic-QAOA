@@ -1,11 +1,9 @@
 from QAOA_utils import *
 import QAOA, graph_methods
-import time
+import time, json
 from datetime import datetime
-#from concurrent.futures import ThreadPoolExecutor, as_completed
 from multiprocessing import Pool, cpu_count
 from functools import partial
-import json
 
 def execute_job_parallel(job):
     graph, n_vertices, n_layers, method, identifier, n_steps, n_samples = job
@@ -108,7 +106,8 @@ def get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_i
     return job_names
 
 def get_result_name_from_job(job):
-    return f"{job[1]}_{job[2]}_{job[3]}_{job[4]}_{job[5]}_{job[6]}"
+    #n_vertices, n_layers, cost_layer, label, n_steps = 30, n_samples = 200): 
+    return f"vertices_{job[1]}_layers_{job[2]}_costlayer_{job[3]}_label_{job[4]}_steps_{job[5]}_samples_{job[6]}"
 
 def generate_job_list_job1(isomorphic_graph_lists, n_layers, n_steps, n_samples, n_vertices, n_isomorph_max):
     job_lists_QAOA = [[graph,n_vertices, n_layers,"QAOA", f"unlabeledGraph_{graph_to_string(graph)}", n_steps, n_samples] for graph in isomorphic_graph_lists]
@@ -179,9 +178,10 @@ def execute_mp_jobs(jobs, parallel_task = True):
         results_list = run_jobs_parallel(jobs)
     return results_list
 
-def execute_single_job(job, parallel_task = True ):
-    result = execute_qaoa_subjob1(job[0],job[1],job[2], job[3], job[4], job[5], job[6])  
+def execute_single_job(job):
+    #[[[0, 1], [2, 3]], 4, 4, "QAOA", "unlabeledGraph_0123", 20, 100]
     #(graph,n_vertices, n_layers, cost_layer, label, n_steps = 30, n_samples = 200): 
+    result = execute_qaoa_subjob1(job[0],job[1],job[2], job[3], job[4], job[5], job[6])  
     jobname = get_result_name_from_job(job)
     save_single_job_result(result,jobname)
 
@@ -240,11 +240,37 @@ def retrieve_job_result_names_list(result_names):
         results_list.append(result)
     return results_list
 
-def execute_slurmarray_from_jobs(jobs):
-    task_id = int(sys.argv[1]) #get the value of the $SLURM_ARRAY_TASK_ID
-    #get jobs
-    return "Test"
+def job1_execute_slurmarray(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, task_id = None):
 
+    if task_id is None or task_id == -1:
+        return
+    #load job list of job1
+    jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    all_jobs = retrieve_stored_jobs(jobnames)
+
+    # the task id array is bigger than the number of jobs
+    if task_id >= len(all_jobs):
+        return
+    
+    execute_single_job(all_jobs[task_id])
+
+def job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
+
+    jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    all_jobs = retrieve_stored_jobs(jobnames)
+
+    results_list = []
+    for job in all_jobs:
+        resultname = get_result_name_from_job(job)
+        result = retrieve_single_job_result(resultname)
+        results_list.append(result)
+    
+    return results_list
+
+def job1_process_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
+    results_list = job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    process_results_save(results_list,jobnames)
 
 def process_results_save(results_list, jobnames):
     #results_list = calculate_ratios_from_results_list(results_list)
@@ -259,4 +285,7 @@ def process_results_save(results_list, jobnames):
     txt_str = ["mean run time: " + str(mean_run_time) + " OMP_NUM_THREADS: " + str(num_threads)]+ results_list   
     formatted_datatime = datetime.now().strftime("%H%M")
 
-    np.savetxt(jobnames, txt_str, fmt='%s', delimiter='\t')
+    subdirectory = "merged_processed_results"
+    file_path = os.path.join(subdirectory, jobnames+".txt")
+
+    np.savetxt(file_path, txt_str, fmt='%s', delimiter='\t')

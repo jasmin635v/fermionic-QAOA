@@ -64,6 +64,21 @@ def parse_args(parser=None):
         default=-1,
         help="The max number of jobs / graphs to solve (first n taken)).",
     )
+
+    parser.add_argument(
+        "--job_name",
+        type=str,
+        default="nojob",
+        help="what job to run",
+    )
+
+    parser.add_argument(
+        "--task_id",
+        type=int,
+        default="-1",
+        help="the slurm task id handled by slurm",
+    )
+
     return parser.parse_args()
 
 def Rzz_matrice(gamma):

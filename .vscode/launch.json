@@ -15,7 +15,9 @@
                 "--n_qubits", "4",
                 "--n_steps", "20",
                 "--max_isomorph_number", "2",
-                "--max_job", "-1"
+                "--max_job", "-1",
+                "--job_name","job1_execute_slurmarray",
+                "--task_id","1"
             ],
             "console": "integratedTerminal"
         }
