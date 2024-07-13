@@ -57,7 +57,7 @@ def calculate_add_ratios_to_results_list(results_list):
 
         ratio =  float(fQAOA_entry[5]) / QAOA_mean
         # [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters)]
-        ratios.append(["fQAOA/QAOA", "mean_ratio-"+fQAOA_entry[1], fQAOA_entry[2], "-", "-",ratio,"-","-","-"  ])
+        ratios.append(["fQAOA/QAOA", "mean_ratio-"+str(fQAOA_entry[1]), str(fQAOA_entry[2]), "-", "-",str(ratio),"-","-","-"  ])
 
     return results_list + ratios
 
@@ -161,12 +161,6 @@ def job1_generate_save_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph
     all_jobs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
     job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
     store_jobs(all_jobs,job_names)
-
-def job1_retrieve_execute_mp_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):
-    all_jobs = job1_retrieve_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None)
-    job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None)
-    results = execute_mp_jobs(all_jobs) 
-    process_results_save(results,job_names)
 
 def job1_retrieve_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
     job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
@@ -287,14 +281,18 @@ def job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isom
     return results_list
 
 def job1_process_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
+    print("start of result merge")
     results_list = job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    print("result list obtained")
     jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    print("jobname obtained")
     process_results_save(results_list,jobnames)
 
 def process_results_save(results_list, jobnames):
     #results_list = calculate_ratios_from_results_list(results_list)
     #run_times = [float(element[-1]) for element in results_list]
     results_list = calculate_add_ratios_to_results_list(results_list)
+    print("ratio calculated")
     
     # Calculate the mean of the "run time" values
     # mean_run_time = sum(run_times) / (len(run_times) * len(run_times))
@@ -310,8 +308,9 @@ def process_results_save(results_list, jobnames):
 
     # Construct the file path
     file_path = os.path.join(subdirectory, jobnames + ".txt")
-
+   
     # Save the results list to the specified JSON file
     with open(file_path, 'w') as f:
         json.dump(results_list, f)
+    print("saved")
 
