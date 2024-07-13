@@ -50,12 +50,12 @@ def calculate_add_ratios_to_results_list(results_list):
         if not QAOA_entry:
             continue
 
-        QAOA_mean = QAOA_entry[0][5]
+        QAOA_mean = float(QAOA_entry[0][5])
 
         if not QAOA_mean > 0:
             continue
 
-        ratio =  fQAOA_entry[5] / QAOA_mean
+        ratio =  float(fQAOA_entry[5]) / QAOA_mean
         # [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters)]
         ratios.append(["fQAOA/QAOA", "mean_ratio-"+fQAOA_entry[1], fQAOA_entry[2], "-", "-",ratio,"-","-","-"  ])
 
@@ -248,19 +248,26 @@ def retrieve_job_result_names_list(result_names):
         results_list.append(result)
     return results_list
 
-def job1_execute_slurmarray(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, task_id = None):
+def job1_execute_slurmarray(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, task_id = None, mock = False):
 
     if task_id is None or task_id == -1:
         return
-    #load job list of job1
-    jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
-    all_jobs = retrieve_stored_jobs(jobnames)
-
-    # the task id array is bigger than the number of jobs
-    if task_id >= len(all_jobs):
-        return
     
-    execute_single_job(all_jobs[task_id])
+    if mock:
+        task_ids = range(max_job)
+    else:
+        task_ids = task_id
+    
+    for task_id in task_ids:   
+    #load job list of job1
+        jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+        all_jobs = retrieve_stored_jobs(jobnames)
+
+        # the task id array is bigger than the number of jobs
+        if task_id >= len(all_jobs):
+            return
+        
+        execute_single_job(all_jobs[task_id])
 
 def job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
 
@@ -304,6 +311,7 @@ def process_results_save(results_list, jobnames):
     # Construct the file path
     file_path = os.path.join(subdirectory, jobnames + ".txt")
 
-    # Save the results list to the specified file
-    np.savetxt(file_path, results_list, fmt='%s', delimiter='\t')
+    # Save the results list to the specified JSON file
+    with open(file_path, 'w') as f:
+        json.dump(results_list, f)
 

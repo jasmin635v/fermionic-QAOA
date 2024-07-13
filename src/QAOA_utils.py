@@ -79,6 +79,13 @@ def parse_args(parser=None):
         help="the slurm task id handled by slurm",
     )
 
+    parser.add_argument(
+        "--mock",
+        type=bool,
+        default="False",
+        help="mock slurm job array on local",
+    )
+
     return parser.parse_args()
 
 def Rzz_matrice(gamma):
