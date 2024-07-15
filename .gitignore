@@ -303,3 +303,4 @@ tmp_report_dir
 .tmp_report.json
 coverage.json
 src/pkg/progress.txt
+src/local_script.py

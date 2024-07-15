@@ -46,7 +46,9 @@ def qaoa_maxcut(graph, n_wires, n_layers, cost_layer = "QAOA", n_steps = 30, n_s
     bitstring_counter = Counter([tuple(arr) for arr in bit_strings])
     objective_counter = [(bitstring_to_objective(key, graph), value) for key, value in bitstring_counter.items()]
 
-    return QAOAResult(objective_counter, params)
+    string_params = param_to_string(params)
+
+    return QAOAResult(objective_counter, string_params)
 
 def sample_bitstrings(graph, n_wires, gammas, betas, n_samples, n_layers=1, lightning_device = True):
 

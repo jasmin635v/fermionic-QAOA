@@ -73,8 +73,11 @@ def execute_qaoa_subjob1(graph,n_vertices, n_layers, cost_layer, label, n_steps 
     elapsed_time_seconds = time.time() - start_time
     elapsed_time_formatted = f"{int(elapsed_time_seconds // 60)} mins {int(elapsed_time_seconds % 60)} secs"
     print(f"    end of job execution of {label}, time elapsed: {elapsed_time_formatted} ")  
-    #chi squared
-    return [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters),elapsed_time_formatted]
+
+    graph_from_label = graph_from_label_string(label)
+
+    return [cost_layer,label, graph_from_label, graph_to_string(graph), mean, maximum, most_common_element, most_common_element_count_ratio, elapsed_time_formatted]
+    #return [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters),elapsed_time_formatted]
 
 def store_jobs(jobs, job_names):
 
@@ -148,7 +151,6 @@ def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max
     elapsed_time = time.time() - start_time
     print(f"Elapsed time: {elapsed_time} seconds")
     return all_jobs
-
 
 def job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):        
     print("start of QAOA - job1")
@@ -296,9 +298,9 @@ def process_results_save(results_list, jobnames):
     
     # Calculate the mean of the "run time" values
     # mean_run_time = sum(run_times) / (len(run_times) * len(run_times))
-    results_list = [["cost_layer","label", "graph", "most_common_element", "most_common_element_count_ratio", "mean", "maximum", "stdev", "layer parameters", "run time"]] + results_list
-    #num_threads = os.getenv("OMP_NUM_THREADS", "not set")
-
+    #results_list = [["cost_layer","label", "graph", "most_common_element", "most_common_element_count_ratio", "mean", "maximum", "stdev", "layer parameters", "run time"]] + results_list
+    results_list = ["cost_layer","label", "simulated graph", "isomorphic graph", "mean", "maximum", "most_common_element", "most_common_element_count_ratio", "elapsed_time_formatted"] + results_list
+    
     # Define the subdirectory name
     subdirectory = "merged_processed_results"
 

@@ -107,7 +107,7 @@ def bitstring_to_objective(bitstring, graph):
     for edge in graph:
         # objective for the MaxCut problem
         obj += 1 - (binary_list[edge[0]] * binary_list[edge[1]])
-    return obj * 0.5
+    return obj  # *0.5
 
 def int_to_bitstring(num):
     # Convert integer to binary string (without '0b' prefix)
@@ -225,7 +225,15 @@ def format_job_name_from_result(job_result):
     return f"{job_result[0]}_{job_result[1]}_{graph_string}.npy"
 
 def graph_to_string(graph):
-    return str(graph).replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '').replace(',', '')
+    return "_"+str(graph).replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '').replace(',', '')
+
+def param_to_string(graph):
+    return str(graph).replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '_').replace(',', '')
+
+def graph_from_label_string(label):
+    last_underscore_pos = label.rfind('_')
+    # Extract and return the substring starting from the last underscore
+    return label[last_underscore_pos:]
 
 def load_numpy_arrays_to_list(filenames):
 # Assuming format_job_name_from_result(QAOA_result) returns unique names for each result
