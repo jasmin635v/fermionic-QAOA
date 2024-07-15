@@ -50,12 +50,12 @@ def calculate_add_ratios_to_results_list(results_list):
         if not QAOA_entry:
             continue
 
-        QAOA_mean = float(QAOA_entry[0][5])
+        QAOA_mean = float(QAOA_entry[0][4])
 
         if not QAOA_mean > 0:
             continue
 
-        ratio =  float(fQAOA_entry[5]) / QAOA_mean
+        ratio =  float(fQAOA_entry[4]) / QAOA_mean
         # [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters)]
         ratios.append(["fQAOA/QAOA", "mean_ratio-"+str(fQAOA_entry[1]), str(fQAOA_entry[2]), "-", "-",str(ratio),"-","-","-"  ])
 
