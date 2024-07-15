@@ -193,7 +193,7 @@ def job1_generate_save_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph= N
     #all_jobs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
     all_jobs_graphs = generate_jobs1(n_vertices, n_layers = None, n_steps = None, n_samples = None, n_isomorph_max = n_isomorph_max, max_unlabeled_graph = max_unlabeled_graph, max_job = max_job,graph_only=True)
     #job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
-    job_names_graph = get_job1_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph, max_job, all_jobs_graphs)
+    job_names_graph = get_job1_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
     store_jobs(all_jobs_graphs,job_names_graph)
 
 def job1_retrieve_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
