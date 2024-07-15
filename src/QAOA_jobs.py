@@ -57,7 +57,7 @@ def calculate_add_ratios_to_results_list(results_list):
 
         ratio =  float(fQAOA_entry[4]) / QAOA_mean
         # [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters)]
-        ratios.append(["fQAOA/QAOA", str(fQAOA_entry[1]), str(fQAOA_entry[2]), "-",str(ratio),"-","-","-","-"  ])
+        ratios.append(["fQAOA/QAOA", str(fQAOA_entry[1]), str(fQAOA_entry[2]), str(fQAOA_entry[3]),str(ratio),"-","-","-","-"  ])
 
     return results_list + ratios
 
