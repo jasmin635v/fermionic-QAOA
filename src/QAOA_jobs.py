@@ -57,7 +57,7 @@ def calculate_add_ratios_to_results_list(results_list):
 
         ratio =  float(fQAOA_entry[4]) / QAOA_mean
         # [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters)]
-        ratios.append(["fQAOA/QAOA", "mean_ratio-"+str(fQAOA_entry[1]), str(fQAOA_entry[2]), "-",str(ratio),"-","-","-","-"  ])
+        ratios.append(["fQAOA/QAOA", str(fQAOA_entry[1]), str(fQAOA_entry[2]), "-",str(ratio),"-","-","-","-"  ])
 
     return results_list + ratios
 
@@ -108,7 +108,7 @@ def get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_i
     job_names = f"job1-vertices_{n_vertices}_layers_{n_layers}_steps_{n_steps}_samples_{n_samples}_isomorphmax_{str(n_isomorph_max)}_maxunlabeledgraph_{str(max_unlabeled_graph)}_maxjob_{max_job}"
     return job_names
 
-def get_job1_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
+def get_job1_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph= None, max_job = None):   
     #[[[[0, 1], [2, 3]], 4, 4, "QAOA", "unlabeledGraph_0123", 20, 100]
     job_names = f"job1-vertices_{n_vertices}_isomorphmax_{str(n_isomorph_max)}_maxunlabeledgraph_{str(max_unlabeled_graph)}_maxjob_{max_job}"
     return job_names
@@ -182,11 +182,18 @@ def job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled
     results_list = execute_mp_jobs(all_jobs)
     process_results_save(results_list, jobnames)
 
-def job1_generate_save_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
+def job1_generate_save_jobs(n_vertices, n_layers = None, n_steps = None, n_samples = None, n_isomorph_max = None, max_unlabeled_graph= None, max_job = None):
     #all_jobs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
     all_jobs_graphs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job,graph_only=True)
     #job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
     job_names_graph = get_job1_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
+    store_jobs(all_jobs_graphs,job_names_graph)
+
+def job1_generate_save_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
+    #all_jobs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    all_jobs_graphs = generate_jobs1(n_vertices, n_layers = None, n_steps = None, n_samples = None, n_isomorph_max = n_isomorph_max, max_unlabeled_graph = max_unlabeled_graph, max_job = max_job,graph_only=True)
+    #job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    job_names_graph = get_job1_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph, max_job, all_jobs_graphs)
     store_jobs(all_jobs_graphs,job_names_graph)
 
 def job1_retrieve_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
