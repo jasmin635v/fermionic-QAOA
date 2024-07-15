@@ -76,7 +76,7 @@ def execute_qaoa_subjob1(graph,n_vertices, n_layers, cost_layer, label, n_steps 
 
     graph_from_label = graph_from_label_string(label)
 
-    return [cost_layer,label, graph_from_label, graph_to_string(graph), mean, maximum, most_common_element, most_common_element_count_ratio, elapsed_time_formatted]
+    return [cost_layer,label, graph_from_label, graph_to_string(graph), mean, maximum, most_common_element, most_common_element_count_ratio, n_layers, n_steps, elapsed_time_formatted]
     #return [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters),elapsed_time_formatted]
 
 def store_jobs(jobs, job_names):
