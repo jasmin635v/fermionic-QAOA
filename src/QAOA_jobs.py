@@ -317,7 +317,9 @@ def job1_execute_slurmarray(n_vertices, n_layers, n_steps, n_samples, n_isomorph
 
 def job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
 
-    jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    #jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    jobnamesgraphs = get_job1_names_from_parameters_graphs(n_vertices,n_isomorph_max,max_unlabeled_graph,max_job)
+    jobnames = create_joblist_from_jobgraphlist(jobnamesgraphs,n_layers,n_steps,n_samples)
     all_jobs = retrieve_stored_jobs(jobnames)
 
     results_list = []
