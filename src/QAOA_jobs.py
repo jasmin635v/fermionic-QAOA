@@ -315,17 +315,24 @@ def job1_execute_slurmarray(n_vertices, n_layers, n_steps, n_samples, n_isomorph
        
         execute_single_job(all_jobs[task_id])
 
+
+def get_possible_jobnames_from_params(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
+    parameters = [f"vertices_{n_vertices}", f"layers_{n_layers}", f"steps_{n_steps}", f"_layers_{n_layers}",f"samples_{n_samples}"]
+    subdirectory = "stored_job_results"
+    all_files = os.listdir(subdirectory)
+    # Filter the files to keep only .npy files
+    npy_files = [f for f in all_files if f.endswith('.npy')]
+    filtered_files = [f for f in npy_files if all(sub in f for sub in parameters)]
+    return filtered_files
+
 def job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
 
-    #jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
-    jobnamesgraphs = get_job1_names_from_parameters_graphs(n_vertices,n_isomorph_max,max_unlabeled_graph,max_job)
-    jobnames = create_joblist_from_jobgraphlist(jobnamesgraphs,n_layers,n_steps,n_samples)
-    all_jobs = retrieve_stored_jobs(jobnames)
+    #graph, n_vertices, label 
+    result_names = get_possible_jobnames_from_params(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None)
 
     results_list = []
-    for job in all_jobs:
-        resultname = get_result_name_from_job(job)
-        result = retrieve_single_job_result(resultname)
+    for result_name in result_names:
+        result = retrieve_single_job_result(result_name)
 
         if result is None:
             continue
