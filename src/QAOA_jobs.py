@@ -260,8 +260,11 @@ def retrieve_single_job_result(resultname):
 
     subdirectory = "stored_job_results"
 
+    if not resultname.endswith('.npy'):
+        resultname = resultname + '.npy'
+
     # Save the array to a .npy file
-    full_path = os.path.join(subdirectory, f"{resultname}.npy")
+    full_path = os.path.join(subdirectory,resultname)
 
     if not os.path.exists(full_path):
         return
@@ -317,7 +320,7 @@ def job1_execute_slurmarray(n_vertices, n_layers, n_steps, n_samples, n_isomorph
 
 
 def get_possible_jobnames_from_params(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
-    parameters = [f"vertices_{n_vertices}", f"layers_{n_layers}", f"steps_{n_steps}", f"_layers_{n_layers}",f"samples_{n_samples}"]
+    parameters = [f"vertices_{n_vertices}", f"layers_{n_layers}", f"steps_{n_steps}",f"samples_{n_samples}"]
     subdirectory = "stored_job_results"
     all_files = os.listdir(subdirectory)
     # Filter the files to keep only .npy files
@@ -343,11 +346,11 @@ def job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isom
 
 def job1_process_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
     print(f"start of result merge vertice {n_vertices}, layers {n_layers}, n_samples {n_samples}, n_isomorph {n_isomorph_max}, max unlb {max_unlabeled_graph}, maxjob {max_job}")
-    results_list = job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
-    print("result list obtained")
+    #results_list = job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    results = job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None)
     jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
     print("jobname obtained")
-    process_results_save(results_list,jobnames)
+    process_results_save(results,jobnames)
 
 def process_results_save(results_list, jobnames):
     #results_list = calculate_ratios_from_results_list(results_list)

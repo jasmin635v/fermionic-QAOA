@@ -16,7 +16,7 @@
                 "--n_steps", "1",
                 "--max_isomorph_number", "0",
                 "--max_job", "4",
-                "--job_name","job1_generate_graphs",  //#job1_generate //job1_execute_slurmarray //job1_process_results
+                "--job_name","job1_process_results",  //#job1_generate //job1_execute_slurmarray //job1_process_results
                 "--task_id","0",
                 "--mock","True"
             ],
