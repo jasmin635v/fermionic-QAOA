@@ -86,6 +86,13 @@ def parse_args(parser=None):
         help="mock slurm job array on local",
     )
 
+    parser.add_argument(
+        "--max_unlabeled_graphs",
+        type=int,
+        default="10",
+        help="max unlabeled graphs",
+    )
+
     return parser.parse_args()
 
 def Rzz_matrice(gamma):

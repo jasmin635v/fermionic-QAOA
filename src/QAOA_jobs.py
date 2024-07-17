@@ -1,6 +1,6 @@
 from QAOA_utils import *
 import QAOA, graph_methods
-import time, json
+import time, json, random
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
 from functools import partial
@@ -57,7 +57,7 @@ def calculate_add_ratios_to_results_list(results_list):
 
         ratio =  float(fQAOA_entry[4]) / QAOA_mean
         # [cost_layer,label, graph_to_string(graph), most_common_element, most_common_element_count_ratio, mean, maximum, stdev, str(graph_results_parameters)]
-        ratios.append(["fQAOA/QAOA", str(fQAOA_entry[1]), str(fQAOA_entry[2]), str(fQAOA_entry[3]),str(ratio),"-","-","-","-"  ])
+        ratios.append(["fQAOA/QAOA", str(fQAOA_entry[1]), str(fQAOA_entry[2]), str(fQAOA_entry[3]),str(ratio),"-","-","-",fQAOA_entry[8],fQAOA_entry[9]])
 
     return results_list + ratios
 
@@ -132,15 +132,15 @@ def generate_job_list_job1(isomorphic_graph_lists, n_layers, n_steps, n_samples,
     
     return all_jobs
 
-
 def generate_job_list_job1_graphslist(isomorphic_graph_lists, n_vertices, n_isomorph_max):
     job_lists_QAOA = [[graph,n_vertices, f"unlabeledGraph_{graph_to_string(graph)}"] for graph in isomorphic_graph_lists]
     job_lists_iso = []
-    for ii, graph in enumerate(isomorphic_graph_lists):
-        isomorphic_graphs = graph_methods.generate_isomorphics_from_combination(graph,max_isomorphism_number=n_isomorph_max)
-        isomorphic_graphs = isomorphic_graphs[1:] #the first generated isomorphic graph is identity
-        for ij, isomorph_graph in enumerate(isomorphic_graphs):                   
-            job_lists_iso.append([isomorph_graph,n_vertices, f"isomorphGraph{ij}_{graph_to_string(graph)}"])
+    if n_isomorph_max != 0 and n_isomorph_max is not None:
+        for ii, graph in enumerate(isomorphic_graph_lists):
+            isomorphic_graphs = graph_methods.generate_isomorphics_from_combination(graph,max_isomorphism_number=n_isomorph_max)
+            isomorphic_graphs = isomorphic_graphs[1:] #the first generated isomorphic graph is identity
+            for ij, isomorph_graph in enumerate(isomorphic_graphs):                   
+                job_lists_iso.append([isomorph_graph,n_vertices, f"isomorphGraph{ij}_{graph_to_string(graph)}"])
 
     all_jobs = job_lists_QAOA + job_lists_iso
     
@@ -174,6 +174,28 @@ def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max
     print(f"Elapsed time: {elapsed_time} seconds")
     return all_jobs
 
+def generate_jobs2(n_vertices, max_unlabeled_graph= 100):
+
+    start_time = time.time()
+    np.random.seed(42)
+
+    #[graph,weight,num_edges,graph]
+    unlabeled_graphs = graph_methods.generate_all_connected_graphs(n_vertices, True)
+    print(f"graphs generated")
+
+    graphs_weights = [sublist[:2] for sublist in unlabeled_graphs]
+
+    graph_weights = [item[1] for item in graphs_weights]
+    graphs = [item[0] for item in graphs_weights]
+
+    #sample graphs according to isomorphic weights
+    samples = random.choices(graphs, weights=graph_weights, k=max_unlabeled_graph)
+
+    all_jobs = generate_job_list_job1_graphslist(samples, n_vertices, n_isomorph_max = 0)
+
+    elapsed_time = time.time() - start_time
+    print(f"Elapsed time: {elapsed_time} seconds")
+    return all_jobs
 
 def job1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None, parallel_task= True):        
     print("start of QAOA - job1")
@@ -194,6 +216,13 @@ def job1_generate_save_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph= N
     all_jobs_graphs = generate_jobs1(n_vertices, n_layers = None, n_steps = None, n_samples = None, n_isomorph_max = n_isomorph_max, max_unlabeled_graph = max_unlabeled_graph, max_job = max_job,graph_only=True)
     #job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
     job_names_graph = get_job1_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
+    store_jobs(all_jobs_graphs,job_names_graph)
+
+def job2_generate_save_graphs(n_vertices,max_unlabeled_graph= None):
+    #all_jobs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    all_jobs_graphs = generate_jobs2(n_vertices, max_unlabeled_graph)
+    #job_names = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    job_names_graph = get_job1_names_from_parameters_graphs(n_vertices, n_isomorph_max=None, max_unlabeled_graph=max_unlabeled_graph, max_job=None)
     store_jobs(all_jobs_graphs,job_names_graph)
 
 def job1_retrieve_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
@@ -297,14 +326,14 @@ def job1_execute_slurmarray(n_vertices, n_layers, n_steps, n_samples, n_isomorph
     if task_id is None or task_id == -1:
         return
     
-    if mock:
-        task_ids = range(max_job)
-    else:
-        task_ids = task_id
-    
     job_graph_names = get_job1_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
     all_jobs_graphs = retrieve_stored_jobs(job_graph_names)
     all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_samples)
+
+    if mock:
+        task_ids = range(len(all_jobs))
+    else:
+        task_ids = task_id
 
     #jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
     #all_jobs = retrieve_stored_jobs(jobnames)
@@ -317,7 +346,6 @@ def job1_execute_slurmarray(n_vertices, n_layers, n_steps, n_samples, n_isomorph
             return
        
         execute_single_job(all_jobs[task_id])
-
 
 def get_possible_jobnames_from_params(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph= None, max_job = None):
     parameters = [f"vertices_{n_vertices}", f"layers_{n_layers}", f"steps_{n_steps}",f"samples_{n_samples}"]
@@ -355,13 +383,12 @@ def job1_process_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_ma
 def process_results_save(results_list, jobnames):
     #results_list = calculate_ratios_from_results_list(results_list)
     #run_times = [float(element[-1]) for element in results_list]
-    results_list = calculate_add_ratios_to_results_list(results_list)
-    print("ratio calculated")
-    
+    #results_list = calculate_add_ratios_to_results_list(results_list)
+  
     # Calculate the mean of the "run time" values
     # mean_run_time = sum(run_times) / (len(run_times) * len(run_times))
     #results_list = [["cost_layer","label", "graph", "most_common_element", "most_common_element_count_ratio", "mean", "maximum", "stdev", "layer parameters", "run time"]] + results_list
-    results_list = ["cost_layer","label", "simulated graph", "isomorphic graph", "mean", "maximum", "most_common_element", "most_common_element_count_ratio", "elapsed_time_formatted"] + results_list
+    #results_list = ["cost_layer","label", "simulated graph", "isomorphic graph", "mean", "maximum", "most_common_element", "most_common_element_count_ratio", "elapsed_time_formatted"] + results_list
     
     # Define the subdirectory name
     subdirectory = "merged_processed_results"
