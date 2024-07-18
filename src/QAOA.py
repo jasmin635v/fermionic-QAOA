@@ -36,16 +36,6 @@ def qaoa_maxcut(graph, n_wires, n_layers, cost_layer="QAOA", n_steps=30, n_sampl
     # row 1: angle 2-1 difference for fRyy entangling gate on mixer layer
     # no parameter for cost layer
 
-    init_params = 0.01 * np.random.rand(2, n_layers, requires_grad=True)
-
-    # optimize parameters in objective
-    params = init_params
-
-    if lightning_device:
-        dev = qml.device("lightning.qubit", wires=n_wires, shots=1)
-    else:
-        dev = qml.device("default.qubit", shots=1)
-
     # minimize the negative of the objective function
     def objective(params):  # only params to be optimized here for optimizer fct
         thetas1 = params[0]
@@ -62,30 +52,46 @@ def qaoa_maxcut(graph, n_wires, n_layers, cost_layer="QAOA", n_steps=30, n_sampl
     def objective_flat(params_flat):
         return objective(params_flat.reshape((2, n_layers)))
 
-    # scipy optimize minimize
-    result = minimize(objective_flat, params.flatten(), method='BFGS')
-    optimized_params_flat = result.x
-    optimized_params_reshaped = optimized_params_flat.reshape((2, n_layers))
+    def optimize(optimizer="BFGS", n_steps=30):
+        optimized_parameters = []
+        init_params = 0.01 * np.random.rand(2, n_layers, requires_grad=True)
+
+        # max iter 15000 normally for L-BFGS-B. n_steps was 30 in original code for gradient descent for 1 layers.
+        # 2000 * nlayers since we need more speed and want to compare fQAOA-QAOA results only
+        if optimizer == "BFGS":
+            # scipy optimize minimize
+            result = minimize(
+                objective_flat, init_params.flatten(), options={'maxiter': 2000*n_layers})
+
+            optimized_params_flat = result.x
+            optimized_parameters = optimized_params_flat.reshape((2, n_layers))
+
+        else:  # original QAOA implementation
+            # initialize optimizer: Adagrad works well empirically
+            opt = qml.AdagradOptimizer(stepsize=0.5)
+            print("adagraph optimizer")
+            for i in range(n_steps):
+                optimized_parameters = init_params
+                optimized_parameters = opt.step(objective, init_params)
+                print(f"        optim. step {i} on {n_steps} for {label}")
+
+        return optimized_parameters
+
+    if lightning_device:
+        dev = qml.device("lightning.qubit", wires=n_wires, shots=1)
+    else:
+        dev = qml.device("default.qubit", shots=1)
+
+    optimized_parameters = optimize(n_steps=n_steps, optimizer="BFGS")
 
     bit_strings = sample_bitstrings(
-        graph, cost_layer, n_wires, thetas1=optimized_params_reshaped[0], thetas2=optimized_params_reshaped[1], n_samples=n_samples, n_layers=n_layers)
-
-    # initialize optimizer: Adagrad works well empirically
-    # opt = qml.AdagradOptimizer(stepsize=0.5)
-
-    # for i in range(n_steps):
-    #     params = opt.step(objective, params)
-    #     print(f"        optim. step {i} on {n_steps} for {label}")
-
-    # sample measured bitstrings 100 times
-    # bit_strings = sample_bitstrings(
-    #     graph, n_wires, thetas1=params[0], thetas2=params[1], n_samples=n_samples, n_layers=n_layers)
+        graph, cost_layer, n_wires, thetas1=optimized_parameters[0], thetas2=optimized_parameters[1], n_samples=n_samples, n_layers=n_layers)
 
     bitstring_counter = Counter([tuple(arr) for arr in bit_strings])
     objective_counter = [(bitstring_to_objective(key, graph), value)
                          for key, value in bitstring_counter.items()]
 
-    string_params = param_to_string(params)
+    string_params = param_to_string(optimized_parameters)
 
     return QAOAResult(objective_counter, string_params)
 
