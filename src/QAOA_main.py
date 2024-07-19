@@ -20,7 +20,7 @@ if __name__ == '__main__':
     max_unlabeled_graphs = args.max_unlabeled_graphs
 
     if job_name == "printargs":
-        print("parsed max_unlabeled_graphs " + max_unlabeled_graphs)
+        print("parsed max_unlabeled_graphs " + str(max_unlabeled_graphs))
 
     if job_name == "job1":  # with multiprocessing (too slow on slurm)
         QAOA_jobs.job1(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples,
