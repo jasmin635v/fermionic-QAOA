@@ -56,12 +56,10 @@ def qaoa_maxcut(graph, n_wires, n_layers, cost_layer="QAOA", n_steps=30, n_sampl
         optimized_parameters = []
         init_params = 0.01 * np.random.rand(2, n_layers, requires_grad=True)
 
-        # max iter 15000 normally for L-BFGS-B. n_steps was 30 in original code for gradient descent for 1 layers.
-        # 2000 * nlayers since we need more speed and want to compare fQAOA-QAOA results only
         if optimizer == "BFGS":
             # scipy optimize minimize
             result = minimize(
-                objective_flat, init_params.flatten(), options={'maxiter': 2000*n_layers})
+                objective_flat, init_params.flatten(), options={'maxiter': 100*n_layers})
 
             optimized_params_flat = result.x
             optimized_parameters = optimized_params_flat.reshape((2, n_layers))
