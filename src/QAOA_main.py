@@ -17,7 +17,7 @@ if __name__ == '__main__':
     job_name = args.job_name
     task_id = args.task_id
     mock = args.mock
-    maxunlblgraph = args.maxunlblgraph
+    maxunlblgraph = args.max_unlbl_graph
 
     if job_name == "printargs":
         print("parsed max_unlabeled_graphs " + str(maxunlblgraph))
