@@ -102,7 +102,7 @@ def parse_args(parser=None):
     )
 
     parser.add_argument(
-        "--max_unlabeled_graphs",  # --max_unlabeled_graphs
+        "--maxunlblgraph",
         type=int,
         default="10",
         help="max unlabeled graphs",

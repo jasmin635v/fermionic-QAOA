@@ -17,10 +17,10 @@ if __name__ == '__main__':
     job_name = args.job_name
     task_id = args.task_id
     mock = args.mock
-    max_unlabeled_graphs = args.max_unlabeled_graphs
+    maxunlblgraph = args.maxunlblgraph
 
     if job_name == "printargs":
-        print("parsed max_unlabeled_graphs " + str(max_unlabeled_graphs))
+        print("parsed max_unlabeled_graphs " + str(maxunlblgraph))
 
     if job_name == "job1":  # with multiprocessing (too slow on slurm)
         QAOA_jobs.job1(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples,
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     # sample n unlabeled graphs according to weight (number of isomorphisms)
     elif job_name == "job2_generate_graphs":
         QAOA_jobs.job2_generate_save_graphs(
-            n_vertices=n_qubits, max_unlabeled_graph=max_unlabeled_graphs)
+            n_vertices=n_qubits, max_unlabeled_graph=maxunlblgraph)
     elif job_name == "job1_generate":
         QAOA_jobs.job1_generate_save_jobs(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples,
                                           n_steps=n_steps, n_isomorph_max=max_isomorph_number, max_job=max_job)
@@ -42,7 +42,7 @@ if __name__ == '__main__':
                                           n_steps=n_steps, n_isomorph_max=max_isomorph_number, max_job=max_job, task_id=task_id, mock=mock)
     elif job_name == "job2_execute_slurmarray":
         QAOA_jobs.job1_execute_slurmarray(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples, n_steps=n_steps,
-                                          max_unlabeled_graph=max_unlabeled_graphs, n_isomorph_max=None, max_job=None, task_id=task_id, mock=mock)
+                                          max_unlabeled_graph=maxunlblgraph, n_isomorph_max=None, max_job=None, task_id=task_id, mock=mock)
 
     elif job_name == "job1_process_results":
         QAOA_jobs.job1_process_results(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples,
