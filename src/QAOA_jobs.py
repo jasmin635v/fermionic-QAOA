@@ -405,7 +405,7 @@ def execute_slurmarray(all_jobs, task_id=None):
     if mock:
         task_ids = range(len(all_jobs))
     else:
-        task_ids = task_id
+        task_ids = [task_id]
 
     for task_id in task_ids:
         # load job list of job1
