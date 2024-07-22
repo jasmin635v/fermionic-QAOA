@@ -95,13 +95,6 @@ def parse_args(parser=None):
     )
 
     parser.add_argument(
-        "--mock",
-        type=bool,
-        default="False",
-        help="mock slurm job array on local",
-    )
-
-    parser.add_argument(
         "--max_unlbl_graph",
         type=int,
         default="10",

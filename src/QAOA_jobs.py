@@ -377,7 +377,7 @@ def create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_sampl
     return all_jobs
 
 
-def job1_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, n_isomorph_max=None, max_unlabeled_graph=None, max_job=None, task_id=None, mock=False):
+def job1_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, n_isomorph_max=None, max_unlabeled_graph=None, max_job=None, task_id=None):
 
     if task_id is None or task_id == -1:
         return
@@ -386,9 +386,9 @@ def job1_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, 
     all_jobs_graphs = retrieve_stored_jobs(job_graph_names)
     all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_samples)
 
-    execute_slurmarray(all_jobs, task_id=task_id, mock=mock)
+    execute_slurmarray(all_jobs, task_id=task_id)
 
-def job2_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, n_isomorph_max=None, max_unlabeled_graph=None, max_job=None, task_id=None, mock=False):
+def job2_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, n_isomorph_max=None, max_unlabeled_graph=None, max_job=None, task_id=None):
 
     if task_id is None or task_id == -1:
         return
@@ -397,11 +397,11 @@ def job2_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, 
     all_jobs_graphs = retrieve_stored_jobs(job_graph_names)
     all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_samples)
 
-    execute_slurmarray(all_jobs, task_id=task_id, mock=mock)
+    execute_slurmarray(all_jobs, task_id=task_id)
 
 
-def execute_slurmarray(all_jobs, task_id=None, mock=False):
-
+def execute_slurmarray(all_jobs, task_id=None):
+    mock = False #set true in debug
     if mock:
         task_ids = range(len(all_jobs))
     else:
