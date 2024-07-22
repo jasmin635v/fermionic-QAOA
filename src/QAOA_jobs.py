@@ -128,6 +128,12 @@ def get_job1_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabe
         n_isomorph_max)}_maxunlabeledgraph_{str(max_unlabeled_graph)}_maxjob_{max_job}"
     return job_names
 
+def get_job2_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph=None, max_job=None):
+    # [[[[0, 1], [2, 3]], 4, 4, "QAOA", "unlabeledGraph_0123", 20, 100]
+    job_names = f"job2-vertices_{n_vertices}_isomorphmax_{str(
+        n_isomorph_max)}_maxunlabeledgraph_{str(max_unlabeled_graph)}_maxjob_{max_job}"
+    return job_names
+
 
 def get_result_name_from_job(job):
     # n_vertices, n_layers, cost_layer, label, n_steps = 30, n_samples = 200):
@@ -157,18 +163,15 @@ def generate_job_list_job1(isomorphic_graph_lists, n_layers, n_steps, n_samples,
 
 
 def generate_job_list_job1_graphslist(isomorphic_graph_lists, n_vertices, n_isomorph_max):
-    job_lists_QAOA = [[graph, n_vertices, f"unlabeledGraph_{
-        graph_to_string(graph)}"] for graph in isomorphic_graph_lists]
+    job_lists_QAOA = [[graph, n_vertices, f"unlabeledGraph_{graph_to_string(graph)}"] for graph in isomorphic_graph_lists]
     job_lists_iso = []
     if n_isomorph_max != 0 and n_isomorph_max is not None:
         for ii, graph in enumerate(isomorphic_graph_lists):
-            isomorphic_graphs = graph_methods.generate_isomorphics_from_combination(
-                graph, max_isomorphism_number=n_isomorph_max)
+            isomorphic_graphs = graph_methods.generate_isomorphics_from_combination(graph, max_isomorphism_number=n_isomorph_max)
             # the first generated isomorphic graph is identity
             isomorphic_graphs = isomorphic_graphs[1:]
             for ij, isomorph_graph in enumerate(isomorphic_graphs):
-                job_lists_iso.append([isomorph_graph, n_vertices, f"isomorphGraph{
-                                     ij}_{graph_to_string(graph)}"])
+                job_lists_iso.append([isomorph_graph, n_vertices, f"isomorphGraph{ij}_{graph_to_string(graph)}"])
 
     all_jobs = job_lists_QAOA + job_lists_iso
 
@@ -214,8 +217,7 @@ def generate_jobs2(n_vertices, max_unlabeled_graph=100):
     np.random.seed(42)
 
     # [graph,weight,num_edges,graph]
-    unlabeled_graphs = graph_methods.generate_all_connected_graphs(
-        n_vertices, True)
+    unlabeled_graphs = graph_methods.generate_all_connected_graphs(n_vertices, True)
     print(f"graphs generated")
 
     graphs_weights = [sublist[:2] for sublist in unlabeled_graphs]
@@ -224,11 +226,9 @@ def generate_jobs2(n_vertices, max_unlabeled_graph=100):
     graphs = [item[0] for item in graphs_weights]
 
     # sample graphs according to isomorphic weights
-    sampled_graphs = random.choices(
-        graphs, weights=graph_weights, k=max_unlabeled_graph)
+    sampled_graphs = random.choices(graphs, weights=graph_weights, k=max_unlabeled_graph)
 
-    all_jobs = generate_job_list_job1_graphslist(
-        sampled_graphs, n_vertices, n_isomorph_max=0)
+    all_jobs = generate_job_list_job1_graphslist(sampled_graphs, n_vertices, n_isomorph_max=0)
     print(f"Elapsed time: {(time.time() - start_time)} seconds")
 
     return all_jobs
@@ -261,9 +261,10 @@ def job1_generate_save_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph=No
 
 
 def job2_generate_save_graphs(n_vertices, max_unlabeled_graph=None):
+
     all_jobs_graphs = generate_jobs2(n_vertices, max_unlabeled_graph)
-    job_names_graph = get_job1_names_from_parameters_graphs(
-        n_vertices, n_isomorph_max=None, max_unlabeled_graph=max_unlabeled_graph, max_job=None)
+    job_names_graph = get_job2_names_from_parameters_graphs(n_vertices, n_isomorph_max=None, max_unlabeled_graph=max_unlabeled_graph, max_job=None)
+
     store_jobs(all_jobs_graphs, job_names_graph)
 
 
@@ -371,31 +372,29 @@ def create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_sampl
     all_jobs = []
     for sublist in all_jobs_graphs:
         graph, n_vertices, label = sublist
-        all_jobs.append([graph, n_vertices, n_layers,
-                        "QAOA", label, n_steps, n_samples])
-        all_jobs.append([graph, n_vertices, n_layers,
-                        "fQAOA", label, n_steps, n_samples])
+        all_jobs.append([graph, n_vertices, n_layers,"QAOA", label, str(n_steps), n_samples])
+        all_jobs.append([graph, n_vertices, n_layers,"fQAOA", label, str(n_steps), n_samples])
     return all_jobs
 
 
-def job1_execute_slurmarray(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None, task_id=None, mock=False):
+def job1_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, n_isomorph_max=None, max_unlabeled_graph=None, max_job=None, task_id=None, mock=False):
 
     if task_id is None or task_id == -1:
         return
 
-    job_graph_names = get_job1_names_from_parameters_graphs(
-        n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
+    job_graph_names = get_job1_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
     all_jobs_graphs = retrieve_stored_jobs(job_graph_names)
-    all_jobs = create_joblist_from_jobgraphlist(
-        all_jobs_graphs, n_layers, n_steps, n_samples)
+    all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_samples)
+
+    execute_slurmarray(all_jobs, task_id=None, mock=False)
+
+
+def execute_slurmarray(all_jobs, task_id=None, mock=False):
 
     if mock:
         task_ids = range(len(all_jobs))
     else:
         task_ids = task_id
-
-    # jobnames = get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
-    # all_jobs = retrieve_stored_jobs(jobnames)
 
     for task_id in task_ids:
         # load job list of job1
