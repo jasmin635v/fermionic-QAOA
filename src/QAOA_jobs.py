@@ -386,7 +386,18 @@ def job1_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, 
     all_jobs_graphs = retrieve_stored_jobs(job_graph_names)
     all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_samples)
 
-    execute_slurmarray(all_jobs, task_id=None, mock=False)
+    execute_slurmarray(all_jobs, task_id=task_id, mock=mock)
+
+def job2_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, n_isomorph_max=None, max_unlabeled_graph=None, max_job=None, task_id=None, mock=False):
+
+    if task_id is None or task_id == -1:
+        return
+
+    job_graph_names = get_job2_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
+    all_jobs_graphs = retrieve_stored_jobs(job_graph_names)
+    all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_samples)
+
+    execute_slurmarray(all_jobs, task_id=task_id, mock=mock)
 
 
 def execute_slurmarray(all_jobs, task_id=None, mock=False):
