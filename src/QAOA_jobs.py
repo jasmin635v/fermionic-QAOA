@@ -226,7 +226,16 @@ def generate_jobs2(n_vertices, max_unlabeled_graph=100):
     graphs = [item[0] for item in graphs_weights]
 
     # sample graphs according to isomorphic weights
-    sampled_graphs = random.choices(graphs, weights=graph_weights, k=max_unlabeled_graph)
+
+    # Ensure max_unlabeled_graph is within bounds
+    max_unlabeled_graph = min(max_unlabeled_graph, len(graphs))
+
+    # Sample graphs with replacement but ensuring uniqueness
+    sampled_graphs = []
+    while len(sampled_graphs) < max_unlabeled_graph:
+        choice = random.choices(graphs, weights=graph_weights, k=1)[0]
+        if choice not in sampled_graphs:
+            sampled_graphs.append(choice)
 
     all_jobs = generate_job_list_job1_graphslist(sampled_graphs, n_vertices, n_isomorph_max=0)
     print(f"Elapsed time: {(time.time() - start_time)} seconds")
@@ -402,6 +411,9 @@ def job2_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, 
 
 def execute_slurmarray(all_jobs, task_id=None):
     mock = False #set true in debug
+    
+    mock = True
+
     if mock:
         task_ids = range(len(all_jobs))
     else:

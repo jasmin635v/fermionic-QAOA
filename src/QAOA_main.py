@@ -4,7 +4,7 @@ from multiprocessing import freeze_support
 
 # needed for multiprocessing
 if __name__ == '__main__':
-    freeze_support()
+    freeze_support() 
     args = parse_args()
     print(args)
 
