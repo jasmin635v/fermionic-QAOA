@@ -411,8 +411,7 @@ def job2_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, 
 
 def execute_slurmarray(all_jobs, task_id=None):
     mock = False #set true in debug
-    
-    mock = True
+    #mock = True
 
     if mock:
         task_ids = range(len(all_jobs))
