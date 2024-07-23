@@ -39,5 +39,9 @@ if __name__ == '__main__':
     elif job_name == "job1_process_results":
         QAOA_jobs.job1_process_results(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples, n_steps=n_steps, n_isomorph_max=max_isomorph_number, max_job=max_job)
     
+    elif job_name == "job2_process_results":
+        QAOA_jobs.job2_process_results(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples)
+
+
     else:
         QAOA_jobs.job1(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples,n_steps=n_steps, n_isomorph_max=max_isomorph_number, max_job=max_job)

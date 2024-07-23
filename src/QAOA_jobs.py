@@ -117,8 +117,12 @@ def retrieve_stored_jobs(job_names):
 
 def get_job1_names_from_parameters(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None):
     # [[[[0, 1], [2, 3]], 4, 4, "QAOA", "unlabeledGraph_0123", 20, 100]
-    job_names = f"job1-vertices_{n_vertices}_layers_{n_layers}_steps_{n_steps}_samples_{n_samples}_isomorphmax_{
-        str(n_isomorph_max)}_maxunlabeledgraph_{str(max_unlabeled_graph)}_maxjob_{max_job}"
+    job_names = f"job1-vertices_{n_vertices}_layers_{n_layers}_steps_{n_steps}_samples_{n_samples}_isomorphmax_{str(n_isomorph_max)}_maxunlabeledgraph_{str(max_unlabeled_graph)}_maxjob_{max_job}"
+    return job_names
+
+def get_job2_names_from_parameters(n_vertices, n_layers, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None):
+    # [[[[0, 1], [2, 3]], 4, 4, "QAOA", "unlabeledGraph_0123", 20, 100]
+    job_names = f"job2-vertices_{n_vertices}_layers_{n_layers}_samples_{n_samples}_isomorphmax_{str(n_isomorph_max)}_maxunlabeledgraph_{str(max_unlabeled_graph)}_maxjob_{max_job}"
     return job_names
 
 
@@ -410,6 +414,7 @@ def job2_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, 
 
 
 def execute_slurmarray(all_jobs, task_id=None):
+    
     mock = False #set true in debug
     #mock = True
 
@@ -432,7 +437,23 @@ def job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isom
 
     # graph, n_vertices, label
     result_names = get_possible_jobnames_from_params(
-        n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None)
+        n_vertices, n_layers = n_layers, n_steps = n_steps, n_samples = n_samples)
+
+    results_list = []
+    for result_name in result_names:
+        result = retrieve_single_job_result(result_name)
+
+        if result is None:
+            continue
+
+        results_list.append(result)
+
+    return results_list
+
+def job2_retrieve_merge_results(n_vertices, n_layers, n_samples):
+
+    # graph, n_vertices, label
+    result_names = get_possible_jobnames_from_params(n_vertices, n_layers, n_samples)
 
     results_list = []
     for result_name in result_names:
@@ -454,6 +475,16 @@ def job1_process_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_ma
         n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None)
     jobnames = get_job1_names_from_parameters(
         n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    print("jobname obtained")
+    process_results_save(results, jobnames)
+
+def job2_process_results(n_vertices, n_layers, n_steps= None, n_samples = None, n_isomorph_max = None, max_unlabeled_graph = None, max_job = None):
+    print(f"start of result merge vertice {n_vertices}, layers {n_layers}, n_samples {n_samples}")
+    # results_list = job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
+    results = job1_retrieve_merge_results(
+        n_vertices = n_vertices, n_layers = n_layers, n_samples = n_samples)
+    jobnames = get_job2_names_from_parameters(
+        n_vertices, n_layers, n_steps = n_steps, n_samples = n_samples, n_isomorph_max = n_isomorph_max, max_unlabeled_graph = max_unlabeled_graph, max_job = max_job)
     print("jobname obtained")
     process_results_save(results, jobnames)
 
@@ -485,9 +516,8 @@ def process_results_save(results_list, jobnames):
     print("saved")
 
 
-def get_possible_jobnames_from_params(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None):
-    parameters = [f"vertices_{n_vertices}", f"layers_{
-        n_layers}", f"steps_{n_steps}", f"samples_{n_samples}"]
+def get_possible_jobnames_from_params(n_vertices, n_layers, n_samples, n_steps=None):
+    parameters = [f"vertices_{n_vertices}", f"layers_{n_layers}", f"steps_{n_steps}", f"samples_{n_samples}"]
     subdirectory = "stored_job_results"
     all_files = os.listdir(subdirectory)
     # Filter the files to keep only .npy files
