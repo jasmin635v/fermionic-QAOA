@@ -482,9 +482,9 @@ def job2_process_results(n_vertices, n_layers, n_steps= None, n_samples = None, 
     print(f"start of result merge vertice {n_vertices}, layers {n_layers}, n_samples {n_samples}")
     # results_list = job1_retrieve_merge_results(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph, max_job)
     results = job2_retrieve_merge_results(n_vertices = n_vertices, n_layers = n_layers, n_samples = n_samples)
-    jobnames = get_job2_names_from_parameters(n_vertices, n_layers, n_steps = n_steps, n_samples = n_samples, n_isomorph_max = n_isomorph_max, max_unlabeled_graph = max_unlabeled_graph, max_job = max_job)
-    print("jobname obtained")
+    jobnames = get_job2_names_from_parameters(n_vertices, n_layers, n_samples = n_samples, n_isomorph_max = n_isomorph_max, max_unlabeled_graph = max_unlabeled_graph, max_job = max_job)
     process_results_save(results, jobnames)
+    print("result merged and saved")
 
 
 def process_results_save(results_list, jobnames):
