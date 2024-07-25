@@ -125,7 +125,22 @@ def circuit(graph, cost_layer, n_wires, thethas1, thethas2, edge=None, n_layers=
     # during the optimization phase we are evaluating a term
     # in the objective using expval
     H = qml.PauliZ(edge[0]) @ qml.PauliZ(edge[1])
+
     return qml.expval(H)
+
+
+def circuit_draw(graph, cost_layer, n_wires, thethas1, thethas2, edge=None, n_layers=1):
+    
+    # one mixer application to create superposition
+    U_B(graph, n_wires, math.pi/2, math.pi/2)
+
+    # p instances of unitary operators
+    for i in range(n_layers):
+        U_C(graph, option=cost_layer)
+        U_B(graph, n_wires, thethas1[i], thethas2[i])
+
+    return
+
 
 
 def circuit_samples(graph, cost_layer, n_wires, thethas1, thethas2, n_layers=1, lightning_device=True):
@@ -166,7 +181,6 @@ def U_B(graph, n_wires, theta1, theta2):
 
 
 def U_C(graph, option="QAOA"):
-    # def U_C(graph, beta, option="QAOA"):
 
     if option == "QAOA":  # regular QAOA algorithm cost layer
         for edge in graph:
@@ -203,8 +217,8 @@ def U_C(graph, option="QAOA"):
                 qml.SWAP(wires=[vertice, vertice+1])
 
     elif option == "fQAOA":  # fermi QAOA algorithm cost layer with fswaps and fixed angle = pi for Rzz
+        
         for edge in graph:
-
             # pick the edge with smallest index
             first_edge = edge[0]
             last_edge = edge[1]
@@ -222,10 +236,6 @@ def U_C(graph, option="QAOA"):
             qml.CNOT(wires=[last_edge-1, last_edge])
             qml.RZ(math.pi, wires=last_edge)  # qml.RZ(beta, wires=wire2)
             qml.CNOT(wires=[last_edge-1, last_edge])
-
-            # apply gate to adjacent swapped qbits
-            # qml.QubitUnitary(Rzz_matrice(fixed_beta),
-            #                  wires=[last_edge-1, last_edge])
 
             # apply fswaps back from the last edge to the first edge
             for vertice in reversed(range(first_edge, last_edge)):
