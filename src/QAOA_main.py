@@ -19,7 +19,7 @@ if __name__ == '__main__':
     maxunlblgraph = args.max_unlbl_graph
 
     if job_name == "job1":  # with multiprocessing (too slow on slurm)
-        QAOA_jobs.job1(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples, n_steps=n_steps, n_isomorph_max=max_isomorph_number, max_job=max_job)
+        QAOA_jobs.job_multiprocess(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples, n_steps=n_steps, n_isomorph_max=max_isomorph_number, max_job=max_job)
 
     elif job_name == "job1_generate_graphs":
         QAOA_jobs.job1_generate_save_graphs(n_vertices=n_qubits, n_isomorph_max=max_isomorph_number, max_job=max_job)
@@ -48,4 +48,4 @@ if __name__ == '__main__':
 
 
     else:
-        QAOA_jobs.job1(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples,n_steps=n_steps, n_isomorph_max=max_isomorph_number, max_job=max_job)
+        QAOA_jobs.job_multiprocess(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples,n_steps=n_steps, n_isomorph_max=max_isomorph_number, max_job=max_job)
