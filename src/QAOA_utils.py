@@ -65,13 +65,13 @@ def parse_args(parser=None):
     parser.add_argument(
         "--n_steps",
         type=int,
-        default=20,
+        default=-1,
         help="The number of steps of the layer parameter optimizer.",
     )
     parser.add_argument(
         "--max_isomorph_number",
         type=int,
-        default=3,
+        default=-1,
         help="The max number of isomorphic graphs to compute per unlabeled graph.",
     )
     parser.add_argument(

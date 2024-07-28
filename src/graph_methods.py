@@ -147,7 +147,7 @@ def generate_isomorphics_from_combination(combination, nodes = None, max_isomorp
     G = return_graph_from_combination(combination, nodes)
     possible_graphs = generate_all_possible_connected_graphs_num_edges(max_node_indice+1,edge_count)
     
-    if max_isomorphism_number is None:        
+    if max_isomorphism_number is None or max_isomorphism_number == "None":        
         max_isomorphism_number = len(possible_graphs)
     else:
         max_isomorphism_number = min(len(possible_graphs),max_isomorphism_number)
