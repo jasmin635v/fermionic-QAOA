@@ -106,7 +106,7 @@ def get_result_name_from_job(job):
     # n_vertices, n_layers, cost_layer, label, n_steps = 30, n_samples = 200):
     return f"vertices_{job[1]}_layers_{job[2]}_costlayer_{job[3]}_label_{job[4]}_steps_{job[5]}_samples_{job[6]}"
 
-def generate_job_list_job1(isomorphic_graph_lists, n_layers, n_steps, n_samples, n_vertices, n_isomorph_max):
+def generate_job_list(isomorphic_graph_lists, n_layers, n_steps, n_samples, n_vertices, n_isomorph_max):
     job_lists_QAOA = [[graph, n_vertices, n_layers, "QAOA", f"unlabeledGraph_{
         graph_to_string(graph)}", n_steps, n_samples] for graph in isomorphic_graph_lists]
     job_lists_fQAOA = [[graph, n_vertices, n_layers, "fQAOA", f"unlabeledGraph_{
@@ -127,7 +127,7 @@ def generate_job_list_job1(isomorphic_graph_lists, n_layers, n_steps, n_samples,
 
     return all_jobs
 
-def generate_job_list_job1_graphslist(isomorphic_graph_lists, n_vertices, n_isomorph_max):
+def generate_job_graphslist(isomorphic_graph_lists, n_vertices, n_isomorph_max):
     job_lists_QAOA = [[graph, n_vertices, f"unlabeledGraph_{graph_to_string(graph)}"] for graph in isomorphic_graph_lists]
     job_lists_iso = []
     if n_isomorph_max != 0 and n_isomorph_max is not None:
@@ -158,10 +158,10 @@ def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max
         unlabeled_graphs_graphs = unlabeled_graphs_graphs[:max_unlabeled_graph]
 
     if graph_only:
-        all_jobs = generate_job_list_job1_graphslist(
+        all_jobs = generate_job_graphslist(
             unlabeled_graphs_graphs, n_vertices, n_isomorph_max)
     else:
-        all_jobs = generate_job_list_job1(
+        all_jobs = generate_job_list(
             unlabeled_graphs_graphs, n_layers, n_steps, n_samples, n_vertices, n_isomorph_max)
     print(f"jobs created, number of jobs:  {
           len(all_jobs)}. Max Jobs: {max_job} (no lim: -1)")
@@ -200,7 +200,7 @@ def generate_jobs2(n_vertices, max_unlabeled_graph=100):
         if choice not in sampled_graphs:
             sampled_graphs.append(choice)
 
-    all_jobs = generate_job_list_job1_graphslist(sampled_graphs, n_vertices, n_isomorph_max=0)
+    all_jobs = generate_job_graphslist(sampled_graphs, n_vertices, n_isomorph_max=0)
     print(f"Elapsed time: {(time.time() - start_time)} seconds")
 
     return all_jobs
