@@ -89,20 +89,6 @@ def execute_qaoa_subjob1(graph, n_vertices, n_layers, cost_layer, label, n_steps
     return [cost_layer, label, graph_from_label, graph_to_string(graph), mean, maximum, most_common_element, most_common_element_count_ratio, n_layers, n_steps, elapsed_time_formatted]
 
 
-def store_jobs(jobs, job_names):
-
-    # create the corresponding directory
-    subdirectory = "stored_jobs"
-
-    # Check if the subdirectory exists and create it if it doesn't
-    if not os.path.exists(subdirectory):
-        os.makedirs(subdirectory)
-
-    json_file_path = os.path.join(subdirectory, f"{job_names}.json")
-    with open(json_file_path, 'w') as f:
-        json.dump(jobs, f)
-
-
 def retrieve_stored_jobs(job_names):
 
     subdirectory = "stored_jobs"
@@ -318,23 +304,15 @@ def execute_single_job(job):
 
 def save_single_job_result(result, jobname):
 
-    subdirectory = "stored_job_results"
-
-    # Convert the list to a NumPy array
-    result_np = np.array(result)
-
-    # Save the array to a .npy file
-    full_path = os.path.join(subdirectory, f"{jobname}.npy")
+    subdirectory = "stored_jobs"
 
     # Create the subdirectory if it doesn't exist
     os.makedirs(subdirectory, exist_ok=True)
 
-    # Save the array to the specified subdirectory
-
-    if not os.path.exists(subdirectory):
-        os.makedirs(subdirectory)
-
-    np.save(full_path, result_np)
+    json_file_path = os.path.join(subdirectory, f"{jobname}.json")
+    
+    with open(json_file_path, 'w') as f:
+        json.dump(result, f)
 
 
 def store_jobs(jobs, job_names):
@@ -355,8 +333,8 @@ def retrieve_single_job_result(resultname):
 
     subdirectory = "stored_job_results"
 
-    if not resultname.endswith('.npy'):
-        resultname = resultname + '.npy'
+    if not resultname.endswith('.json'):
+        resultname = resultname + '.json'
 
     # Save the array to a .npy file
     full_path = os.path.join(subdirectory, resultname)
@@ -364,13 +342,17 @@ def retrieve_single_job_result(resultname):
     if not os.path.exists(full_path):
         return
 
-    # Load the NumPy array from the file
-    loaded_array = np.load(full_path)
+     # Open the JSON file and load the data
+    with open(full_path, 'r') as f:
+        data = json.load(f)
 
-    # Convert the NumPy array back to a list
-    loaded_list = loaded_array.tolist()
+    # # Load the NumPy array from the file
+    # loaded_array = np.load(full_path)
 
-    return loaded_list
+    # # Convert the NumPy array back to a list
+    # loaded_list = loaded_array.tolist()
+
+    return data
 
 
 def retrieve_job_result_names_list(result_names):
@@ -403,6 +385,7 @@ def job1_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, 
 
 def job2_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, n_isomorph_max=None, max_unlabeled_graph=None, max_job=None, task_id=None):
 
+
     if task_id is None or task_id == -1:
         return
 
@@ -411,6 +394,23 @@ def job2_execute_slurmarray(n_vertices, n_layers, n_steps=None, n_samples=None, 
     all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_samples)
 
     execute_slurmarray(all_jobs, task_id=task_id)
+
+
+
+def job3_execute_slurmarray(n_vertices, n_layers_array, n_steps=None, n_samples=None, n_isomorph_max=None, max_unlabeled_graph=None, max_job=None, task_id=None):
+    #run for many layers sequentially for each graph
+    
+    job_graph_names = get_job2_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
+    all_jobs_graphs = retrieve_stored_jobs(job_graph_names)
+
+    for n_layers in n_layers_array:
+    
+        if task_id is None or task_id == -1:
+            return
+
+        all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_samples)
+
+        execute_slurmarray(all_jobs, task_id=task_id)
 
 
 def execute_slurmarray(all_jobs, task_id=None):

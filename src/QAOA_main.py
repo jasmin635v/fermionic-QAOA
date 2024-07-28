@@ -36,6 +36,10 @@ if __name__ == '__main__':
     elif job_name == "job2_execute_slurmarray":
         QAOA_jobs.job2_execute_slurmarray(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples, n_steps="None", max_unlabeled_graph=maxunlblgraph, n_isomorph_max=None, max_job=None, task_id=task_id)
 
+    elif job_name == "job3_execute_slurmarray":
+        QAOA_jobs.job3_execute_slurmarray(n_vertices=n_qubits, n_layers_array=n_layers, n_samples=n_samples, n_steps="None", max_unlabeled_graph=maxunlblgraph, n_isomorph_max=None, max_job=None, task_id=task_id)
+
+
     elif job_name == "job1_process_results":
         QAOA_jobs.job1_process_results(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples, n_steps=n_steps, n_isomorph_max=max_isomorph_number, max_job=max_job)
     

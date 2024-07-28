@@ -11,12 +11,12 @@
             "program": "${file}",
             "args": [
                 "--n_samples", "400",
-                "--n_layers", "3",
+                "--n_layers", "3", "4", "5",
                 "--n_qubits", "4",
                 "--n_steps", "1",
                 "--max_isomorph_number", "0",
                 "--max_job", "4",
-                "--job_name","job2_execute_slurmarray",  //#job1_generate //job1_execute_slurmarray //job1_process_results //#job2_generate_graphs
+                "--job_name","job3_execute_slurmarray",  //#job1_generate //job1_execute_slurmarray //job1_process_results //#job2_generate_graphs
                 "--task_id","0",
                 "--max_unlbl_graph", "10"
             ],

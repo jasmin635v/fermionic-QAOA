@@ -52,7 +52,8 @@ def parse_args(parser=None):
     parser.add_argument(
         "--n_layers",
         type=int,
-        default=4,
+        nargs='+',  # Accept one or more integers
+        default=[4],
         help="The number of mixer / cost layers.",
     )
     parser.add_argument(
