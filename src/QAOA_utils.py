@@ -66,12 +66,12 @@ def parse_args(parser=None):
         "--n_steps",
         type=int,
         default=-1,
-        help="The number of steps of the layer parameter optimizer.",
+        help="The number of steps of the layer parameter gradiebt optimizer.", #the gradient optimizer is unused
     )
     parser.add_argument(
         "--max_isomorph_number",
         type=int,
-        default=-1,
+        default=0,
         help="The max number of isomorphic graphs to compute per unlabeled graph.",
     )
     parser.add_argument(
