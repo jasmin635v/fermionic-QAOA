@@ -3,6 +3,7 @@ import QAOA, graph_methods, time, json, random, os
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
 from functools import partial
+import subprocess
 
 
 def execute_job_parallel(job):
@@ -66,6 +67,8 @@ def execute_qaoa_subjob(graph, n_vertices, n_layers, cost_layer, label, n_steps=
     np.random.seed(42)
     # (graph, n_wires, n_layers, cost_layer = "QAOA", n_steps = 30, n_samples = 200, lightning_device = True, mixer_layer = "fermionic_Ryy"):
     start_time = time.time()
+
+
 
     graph_results = QAOA.qaoa_maxcut(graph, n_vertices, n_layers, cost_layer=cost_layer,
                                      n_steps=n_steps, n_samples=n_samples, label=label)  # n_layer = n_vertices
@@ -146,7 +149,6 @@ def generate_job_graphslist(isomorphic_graph_lists, n_vertices, n_isomorph_max):
     all_jobs = job_lists_QAOA + job_lists_iso
 
     return all_jobs
-
 def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None, graph_only=False):
 
     start_time = time.time()
@@ -182,36 +184,14 @@ def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max
     print(f"Elapsed time: {elapsed_time} seconds")
     return all_jobs
 
-def generate_jobs2(n_vertices, max_unlabeled_graph=100):
-
-    start_time = time.time()
-    np.random.seed(42)
-
-    # [graph,weight,num_edges,graph]
-    unlabeled_graphs = graph_methods.generate_all_connected_graphs(n_vertices, True)
-    print(f"graphs generated")
-
-    graphs_weights = [sublist[:2] for sublist in unlabeled_graphs]
-
-    graph_weights = [item[1] for item in graphs_weights]
-    graphs = [item[0] for item in graphs_weights]
-
-    # sample graphs according to isomorphic weights
-
-    # Ensure max_unlabeled_graph is within bounds
-    max_unlabeled_graph = min(max_unlabeled_graph, len(graphs))
-
-    # Sample graphs with replacement but ensuring uniqueness
-    sampled_graphs = []
-    while len(sampled_graphs) < max_unlabeled_graph:
-        choice = random.choices(graphs, weights=graph_weights, k=1)[0]
-        if choice not in sampled_graphs:
-            sampled_graphs.append(choice)
-
-    all_jobs = generate_job_graphslist(sampled_graphs, n_vertices, n_isomorph_max=0)
-    print(f"Elapsed time: {(time.time() - start_time)} seconds")
-
-    return all_jobs
+def generate_n1_jobs_from_graph(jobname, graph, n_jobs, n_layers = 3, n_samples=400):
+    max_vertice = max(max(edge) for edge in graph)
+    new_vertice = max_vertice + 1
+    n1_graphs = graph_methods.generate_all_n1_graphs_from_n_graph(graph)
+    n1_graphs_sorted = sorted(n1_graphs, key=lambda x: x[1])
+    n1_graphs_sorted_slice = [unlbl_graph for unlbl_graph in n1_graphs_sorted if n1_graphs_sorted[0] == n1_graphs_sorted[2]][:n_jobs]
+    n1_jobs = generate_job_list(n1_graphs_sorted_slice,n_layers,None,n_samples,new_vertice,0)
+    store_jobs(n1_jobs,jobname+"_"+str(new_vertice))
 
 def job_multiprocess(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None, parallel_task=True):
         #multiprocessing doesnt work properly on slurm, do not use
@@ -243,8 +223,9 @@ def execute_single_job(job, mock = False):
     else:
         result = ["mock0", "mock1", "mock2", "mock3", "mock4", "mock5", "mock6", "mock7", "mock8", "mock9", "mock10"]
     
-    jobname = get_result_name_from_job(job)
-    save_single_job_result(result, jobname)
+    return result
+    #jobname = get_result_name_from_job(job)
+    #save_single_job_result(result, jobname)
 
 def save_single_job_result(result, jobname):
 
@@ -275,7 +256,6 @@ def store_jobs(jobs, job_names):
     json_file_path = os.path.join(subdirectory, f"{job_names}.json")
     with open(json_file_path, 'w') as f:
         json.dump(jobs, f)
-
 
 def retrieve_single_job_result(resultname):
 
@@ -326,7 +306,56 @@ def job_execute_slurmarray(n_vertices, n_layers_array, n_steps=None, n_samples=4
             return
 
         all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_samples)
-        execute_slurmarray(all_jobs, task_id=task_id)
+        result = execute_slurmarray(all_jobs, task_id=task_id)
+
+        jobname = get_result_name_from_job(all_jobs[task_id])
+        save_single_job_result(result, jobname)
+
+def job_execute_slurmarray_from_stored_job_name(jobname, task_id, n_layers_array = [3], n_sample = 400):
+
+    all_jobs_graphs = retrieve_stored_jobs(jobname)
+    for n_layers in n_layers_array:
+
+        if task_id is None or task_id == -1:
+            return
+
+        all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps = None, n_samples = n_sample)
+        result = execute_slurmarray(all_jobs, task_id=task_id)
+        save_single_job_result(result, jobname)
+
+def job_execute_vertice_converge_job(n_layers_array = [3], n_sample = 400, n_graphs = 3):
+
+    # start with this given graph 01_02_13_23 (the worst for fQAOA in previously obtained results)
+    graph_4_vertices = [(0,1),(0,2),(1,3),(2,3)]
+
+    current_time = datetime.now()
+    formatted_time = current_time.strftime("%H%M%S")
+
+    continue_flag = True
+    base_graph = graph_4_vertices.copy()
+    while continue_flag:
+
+        vertices = 5
+        for n_layer in n_layers_array:
+            generate_n1_jobs_from_graph(f"job_vertices_{vertices}_layer_{n_layer}_reg_+{formatted_time}",base_graph,n_graphs,n_layer,n_sample)
+
+        job_ids = []
+        for n_layer in n_layers_array:
+            job_name = f"job_vertices_{vertices}_layer_{n_layer}_reg_+{formatted_time}"
+            job_script = return_slurm_array_test_script_job_execute_slurmarray_from_job_name_string(job_name, n_layer, n_graphs, n_sample)
+            job_id = submit_slurm_job(job_script)
+            job_ids.append(job_id)
+
+        while not check_job_id_state(job_ids): # continue check job state until it is completed
+            time.sleep(60) #wait a min
+        
+        #check results, if < than last two times: continue_flag = false
+        #save smaller fqaoa result, assign new graph
+
+        vertices += 1 #next vertice number
+            
+
+
 
 def execute_slurmarray(all_jobs, task_id=None):
     
@@ -344,7 +373,10 @@ def execute_slurmarray(all_jobs, task_id=None):
         if task_id >= len(all_jobs):
             return
 
-        execute_single_job(all_jobs[task_id], mock) #Remove
+        result = execute_single_job(all_jobs[task_id], mock) #Remove
+        return result
+        #jobname = get_result_name_from_job(all_jobs[task_id])
+        #save_single_job_result(result, jobname)
 
 def job_retrieve_merge_results(n_vertices, n_layers, n_samples):
 
@@ -370,7 +402,6 @@ def job_process_results(n_vertices, n_layers, n_steps= None, n_samples = None, n
     jobnames = get_job_names_from_parameters(n_vertices, n_layers, n_samples = n_samples, n_isomorph_max = n_isomorph_max, max_unlabeled_graph = max_unlabeled_graph, max_job = max_job)
     process_results_save(results, jobnames)
     print("result merged and saved")
-
 
 def job_process_results_layers(n_vertices, layer_list, n_samples = 400, n_isomorph_max = None, max_unlabeled_graph = None, max_job = None):
     layers_string = "".join(str(x) for x in layer_list)
@@ -458,3 +489,12 @@ def get_possible_jobnames_from_params(n_vertices, n_layers, n_samples=400, n_ste
     filtered_files = [f for f in json_files if all(
         sub in f for sub in parameters)]
     return filtered_files
+
+def test_slurm_state():
+    job_script = return_slurm_array_test_script_string()
+    job_id = submit_slurm_job(job_script)
+    print("job_ids: " + job_id)
+    check_job_id_state(job_id)
+    while not check_job_id_state(job_id):
+        print("waiting 15 sec")
+        time.sleep(15)

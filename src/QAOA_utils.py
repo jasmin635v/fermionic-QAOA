@@ -5,6 +5,8 @@ import os
 import time
 import sys
 import argparse
+import subprocess
+import re
 
 matchgateOnes = np.array([[1, 0, 0, 1],
                           [0, 1, 1, 0],
@@ -89,6 +91,13 @@ def parse_args(parser=None):
     )
 
     parser.add_argument(
+        "--stored_job_name",
+        type=str,
+        default="nojob",
+        help="the name under which the job results are stored (used inside the script)",
+    )
+
+    parser.add_argument(
         "--task_id",
         type=int,
         default="-1",
@@ -101,6 +110,8 @@ def parse_args(parser=None):
         default="10",
         help="max unlabeled graphs",
     )
+
+
 
     return parser.parse_args()
 
@@ -291,3 +302,174 @@ def remove_npy_files(filenames):
             print(f"Deleted: {filename}")
         else:
             print(f"{filename} does not exist.")
+
+
+def return_slurm_array_test_script_string(account= "def-ko1"):
+    script_string = f"""#!/bin/bash
+    #SBATCH --account={account}
+    #SBATCH --time=10:00
+    #SBATCH --mem=512M
+    #SBATCH --cpus-per-task=1
+
+    N_QUBITS=3
+    MAX_UNLABELED_GRAPHS=1
+
+    # Load necessary modules and activate environment
+    echo "---"
+    echo " module load  "
+    echo "---"
+
+    module load python/3.12
+
+    echo "---"
+    echo " virtual env --nodownload maxcut "
+    echo "--- "
+
+    virtualenv --no-download maxcut
+
+    echo "---"
+    echo " source maxcut/bin/activate "
+    echo "---"
+
+    source maxcut/bin/activate
+
+    export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+    echo "---"
+    echo "Running QAOA_main.py script"
+    echo "---"
+
+    START_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+    START_TIME_FILE=$(date +"%H%M%S")
+    OUTPUT_FILE="SlurmTEST-${{N_QUBITS}}__MaUnlabeledGraphs-${{MAX_UNLABELED_GRAPHS}}_${{START_TIME_FILE}}.txt"
+
+    # Pass parameters as environment variables
+    # Execute the main script
+    python QAOA_main.py --n_qubits $N_QUBITS --max_unlbl_graph $MAX_UNLABELED_GRAPHS --job_name "job_generate_graphs" > "$OUTPUT_FILE" 2>&1
+
+    # Record end time and calculate elapsed time
+    END_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+    ELAPSED_TIME=$(date -u -d @$(($(date -d "$END_TIME" +%s) - $(date -d "$START_TIME" +%s))) +"%H:%M:%S")
+
+    # Append elapsed time to output file
+    echo "Elapsed time: (from sh) $ELAPSED_TIME" >> "$OUTPUT_FILE"
+    """
+    return script_string
+
+def return_slurm_array_test_script_job_execute_slurmarray_from_job_name_string(stored_job_name, n_layers, n_tasks, n_samples = 400, account= "def-ko1"):
+    script_string = f"""#!/bin/bash
+    #SBATCH --account={account}
+    #SBATCH --time=8:00:00
+    #SBATCH --mem=1G
+    #SBATCH --cpus-per-task=2
+    #SBATCH --array=0-{str(n_tasks-1)}  # Adjust based on your requirements
+
+    # Load necessary modules and activate environment
+    echo "---"
+    echo " module load  "
+    echo "---"
+
+    module load python/3.12
+
+    echo "---"
+    echo " virtual env --nodownload maxcut "
+    echo "--- "
+
+    virtualenv --no-download maxcut
+
+    echo "---"
+    echo " source maxcut/bin/activate "
+    echo "---"
+
+    source maxcut/bin/activate
+
+    export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+    echo "---"
+    echo "Running QAOA_main.py script"
+    echo "---"
+
+    START_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+    START_TIME_FILE=$(date +"%H%M%S")
+    OUTPUT_FILE="SlurmArray-Vertice-${{N_QUBITS}}_Layers-${{N_LAYERS}}_MaxUnlabeledGraphs-${{MAX_UNLABELED_GRAPHS}}_${{START_TIME_FILE}}.txt"
+
+    # Pass parameters as environment variables
+    N_SAMPLES={str(n_samples)}
+    N_LAYERS={n_layers}
+
+    # Execute the main script
+    python QAOA_main.py --n_samples $N_SAMPLES --n_layers $N_LAYERS --task_id $SLURM_ARRAY_TASK_ID --job_name "job_execute_slurmarray_from_job_name" --stored_job_name "{stored_job_name}"
+
+    # Record end time and calculate elapsed time
+    END_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+    ELAPSED_TIME=$(date -u -d @$(($(date -d "$END_TIME" +%s) - $(date -d "$START_TIME" +%s))) +"%H:%M:%S")
+
+    # Append elapsed time to output file
+    echo "Elapsed time: (from sh) $ELAPSED_TIME" >> "$OUTPUT_FILE"
+    """
+    return script_string
+
+
+
+
+def submit_slurm_job(job_script):
+    # Create a temporary SLURM script
+    slurm_script = "slurm_temp_job.sh"
+    with open(slurm_script, "w") as f:
+        f.write(job_script)
+        #f.write(return_slurm_array_test_script_job_execute_slurmarray_from_job_name_string(job_name, n_layers,n_tasks, n_samples))
+
+    # Make the script executable
+    subprocess.run(["chmod", "+x", slurm_script])
+
+    # Submit the SLURM job
+    subprocess.run(["sbatch", slurm_script])
+
+    # Submit the SLURM job and capture the output
+    result = subprocess.run(["sbatch", slurm_script], capture_output=True, text=True)
+    print("slurm result: " + result)
+    print("slurm result stdout: " + result.stdout)
+    
+    # Extract job ID from the output
+     #   """Extracts the job ID from the sbatch output."""
+    match = re.search(r'Submitted batch job (\d+)', result.stdout)
+
+    print("slurm result search match: " + match)   
+
+    os.remove(slurm_script)
+
+    return match.group(1) if match else None
+
+def check_job_id_state(job_ids, verbose = False):
+    # Create a comma-separated string of job IDs
+    job_ids_str = ','.join(map(str, job_ids))
+
+    # Run the squeue command to check the status
+    result = subprocess.run(['squeue', '-j', job_ids_str], capture_output=True, text=True)
+
+        # Process the output
+    lines = result.stdout.strip().split('\n')
+
+    if verbose:
+        print("subprocess result: " + result)
+        print("lines result " + lines)
+
+    
+    # Check if there are any jobs that are not completed
+    if len(lines) > 1:  # The first line is the header
+        # Extract job states
+        for line in lines[1:]:
+            columns = line.split()
+            job_id = columns[0]  # First column is the job ID
+            job_state = columns[4]  # State is usually in the 5th column
+            
+            if verbose:
+                print("columns result: " + columns)
+                print("job_id result " + job_id)
+                print("job_state result: " + job_state)
+
+            if job_state not in ['CD', 'F']:  # 'CD' is Completed, 'F' is Failed
+                print(f"Job {job_id} is not completed. Current state: {job_state}")
+                return False
+    return True
+    

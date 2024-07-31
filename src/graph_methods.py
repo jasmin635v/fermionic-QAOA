@@ -1,7 +1,6 @@
 import networkx as nx
 from itertools import combinations, groupby
 import math, time
-#import matplotlib.pyplot as plt
 
 # connected (no free vertices)  graphs with n nodes:
 
@@ -39,8 +38,7 @@ def plot_xylists(xy_lists):
 def return_graph_from_combination(combination, nodes = None):
 
     if nodes == None:
-        node_list = list(set(node for edge in combination for node in edge))
-        max_node_indice = max(node_list)
+        max_node_indice = node_number_from_graph(combination)
         nodes = list(range(0,max_node_indice +1))
 
     G = nx.Graph()
@@ -48,6 +46,38 @@ def return_graph_from_combination(combination, nodes = None):
     G.add_edges_from(combination)
     
     return G
+
+def node_number_from_graph(combination):
+        node_list = list(set(node for edge in combination for node in edge))
+        max_node_indice = max(node_list)
+
+
+def generate_all_n1_graphs_from_n_graph(graph): # graph format [(0, 1), (2, 3)]
+
+    max_vertice = max(max(edge) for edge in graph)
+    new_vertice = max_vertice + 1
+
+    #get all possible tuples
+    possible_tuples = [(node,new_vertice) for node in range(0,new_vertice)]
+
+    all_combinations = []
+    for r in range(1, len(possible_tuples) + 1):
+        combinations_r = list(combinations(possible_tuples, r))
+        all_combinations.extend([list(combo) for combo in combinations_r])
+
+    
+    G = return_graph_from_combination(graph)
+    G.add_node(new_vertice)
+
+    graphs = [G]
+    for combination_graph in all_combinations:
+        Gi = G.copy()
+        Gi.add_edges_from(combination_graph)
+        graphs.append(Gi)
+  
+    graphs = add_graph_to_list_isomorphics(graphs)
+
+    return all_combinations
 
 def get_mean_automorphism_count_per_edge_number(graph_edge_automorphisms_edgenum_lists):
 
@@ -74,10 +104,7 @@ def generate_all_possible_connected_graphs_num_edges(n, num_edges, edge_lists = 
         possible_edges = list(combinations(nodes, 2))
         all_graphs_with_num_edges = []
        
-        # Generate all combinations of edges for the current num_edges
-        # Start with minimum possible number of edges to give graph with each vertices connected to at least another vertices
         edges_combinations_n_edges = [[edge for edge in combo] for combo in list(combinations(possible_edges, num_edges))]
-
         graphs_all_nodes = []
 
         # create graphs from combinations with all nodes/vertices presents
@@ -90,6 +117,31 @@ def generate_all_possible_connected_graphs_num_edges(n, num_edges, edge_lists = 
             graphs_all_nodes = [list(graph.edges()) for graph in graphs_all_nodes]
 
         return graphs_all_nodes
+
+def add_graph_to_list_isomorphics(nx_graphs):
+    isomorphic_graphs = []
+    for graph in nx_graphs:           
+            
+        #add to list with weight one if none present are already isomorphic
+        if not isomorphic_graphs or not any(nx.is_isomorphic(graph, isomorphic_graph[0]) for isomorphic_graph in isomorphic_graphs): #nx.is_isomorphic is not same type of isomorphism as match.isomorphism_iter generated
+                isomorphic_graphs.append([graph,1, graph])
+        else:
+
+            isomorphic_to_graph_entries = [existing_graph for existing_graph in isomorphic_graphs if nx.is_isomorphic(graph, existing_graph[0])]
+            first_isomorphic_to_graph_entry = isomorphic_to_graph_entries[0][0]
+            first_isomorphic_to_graph_entry_weight = isomorphic_to_graph_entries[0][1] +1 #add current graph to weight
+
+            # update isomorphic graph with new weights
+            isomorphic_graphs = [
+            [element[0],first_isomorphic_to_graph_entry_weight,first_isomorphic_to_graph_entry] if nx.is_isomorphic(graph, element[0]) 
+            else element for element in isomorphic_graphs
+            ]
+
+            # get number of isomorphic graph already present, get cumulative weight and remove isomorphics
+            graph_entry = [graph,first_isomorphic_to_graph_entry_weight,first_isomorphic_to_graph_entry]
+            isomorphic_graphs.append(graph_entry)
+    
+    return isomorphic_graphs
 
 def generate_all_connected_graphs(n_vertices, filter_isomorphics = False): #connected means with no free vertice
     n = n_vertices
@@ -179,32 +231,7 @@ def draw_graph(combination , ax = None):
     G = return_graph_from_combination(combination)
     pos = nx.circular_layout(G)
     nx.draw(G, pos)
-    # if ax is not None:
-    #     ax.set_title(f"Combination: {combination}")
 
-# def draw_graphs_in_grid(list_combinations):
-#     num_plots = len(list_combinations)
-#     num_cols = 3  # Number of columns in the grid of subplots
-#     num_rows = (num_plots - 1) // num_cols + 1  # Calculate number of rows needed
-
-#     #fig = plt.figure(figsize=(15, 5*num_rows))
-#     # Create a gridspec for adding subplots of different sizes
-#     #axgrid = fig.add_gridspec(num_rows, num_cols)
-
-#     # Draw each graph on its respective subplot and set title
-#     for i, combination in enumerate(list_combinations):
-#         row = i // num_cols
-#         col = i % num_cols
-#         #ax = fig.add_subplot(axgrid[row, col])
-#         #draw_graph(combination, ax=ax)
-#         #ax.set_title(f"Combination {i+1}: {combination}")
-
-#     # Hide any extra subplot axes if there are more axes than plots
-#     for j in range(num_plots, num_rows * num_cols):
-#         #fig.delaxes(fig.axes[j])  # Delete extra axes that are not used
-
-#     #fig.tight_layout()
-#    # plt.show()
 
 def test_combination_list():
     test_combination1 = [(0,1),(0,2),(2,3),(4,3),(4,1)]
@@ -286,3 +313,6 @@ def generate_all_graphs(n):
         all_graphs.extend(edges_combination_weight)
 
     return all_graphs
+
+
+combos = generate_all_n1_graphs_from_n_graph([(0,1),(1,2)])

@@ -14,6 +14,7 @@ if __name__ == '__main__':
     n_steps = args.n_steps
     job_name = args.job_name
     task_id = args.task_id
+    stored_job_name = args.stored_job_name
 
     max_isomorph_number = args.max_isomorph_number
     if max_isomorph_number == -1 or max_isomorph_number == 0:
@@ -39,6 +40,12 @@ if __name__ == '__main__':
     elif job_name == "job_execute_slurmarray":
         QAOA_jobs.job_execute_slurmarray(n_vertices=n_qubits, n_layers_array=n_layers, n_samples=400, n_steps="None", max_unlabeled_graph=maxunlblgraph, n_isomorph_max=max_isomorph_number, max_job=max_job, task_id=task_id)
 
+    elif job_name == "job_execute_slurmarray_from_job_name": #used internally to spawn jobs
+        QAOA_jobs.job_execute_slurmarray_from_stored_job_name(stored_job_name, task_id, n_layers_array = [3], n_sample = 400)
+     
+    elif job_name == "job_vertices_converge_job":
+        QAOA_jobs.job_execute_vertice_converge_job(n_layers_array = [3], n_sample = 400)
+    
     elif job_name == "job_process_results":
         QAOA_jobs.job_process_results(n_vertices=n_qubits, n_layers=n_layers, n_samples=400)
 
@@ -48,4 +55,5 @@ if __name__ == '__main__':
     elif job_name == "job_multiprocess":  # with multiprocessing (too slow on slurm)
         QAOA_jobs.job_multiprocess(n_vertices=n_qubits, n_layers=n_layers, n_samples=n_samples, n_steps=n_steps, n_isomorph_max=max_isomorph_number, max_job=max_job)
 
-
+    elif job_name == "test_slurm_state":
+        QAOA_jobs.test_slurm_state()
