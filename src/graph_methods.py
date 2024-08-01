@@ -50,6 +50,7 @@ def return_graph_from_combination(combination, nodes = None):
 def node_number_from_graph(combination):
         node_list = list(set(node for edge in combination for node in edge))
         max_node_indice = max(node_list)
+        return max_node_indice
 
 
 def generate_all_n1_graphs_from_n_graph(graph): # graph format [(0, 1), (2, 3)]
@@ -315,4 +316,4 @@ def generate_all_graphs(n):
     return all_graphs
 
 
-combos = generate_all_n1_graphs_from_n_graph([(0,1),(1,2)])
+#combos = generate_all_n1_graphs_from_n_graph([(0,1),(1,2)])
