@@ -321,38 +321,55 @@ def job_execute_slurmarray_from_stored_job_name(jobname, task_id, n_layers_array
 
         all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps = None, n_samples = n_sample)
         result = execute_slurmarray(all_jobs, task_id=task_id)
-        save_single_job_result(result, jobname)
+        save_single_job_result(result, jobname+"task"+str(task_id))
 
-def job_execute_vertice_converge_job(n_layers_array = [3], n_sample = 400, n_graphs = 3):
+def job_execute_vertice_converge_job(n_layer = 3, n_sample = 400, n_graphs = 3):
 
     # start with this given graph 01_02_13_23 (the worst for fQAOA in previously obtained results)
     graph_4_vertices = [(0,1),(0,2),(1,3),(2,3)]
 
     current_time = datetime.now()
     formatted_time = current_time.strftime("%H%M%S")
-
+    all_results = []
     continue_flag = True
     base_graph = graph_4_vertices.copy()
+    vertices = 5
     while continue_flag:
 
-        vertices = 5
-        for n_layer in n_layers_array:
-            generate_n1_jobs_from_graph(f"job_vertices_{vertices}_layer_{n_layer}_reg_+{formatted_time}",base_graph,n_graphs,n_layer,n_sample)
+        generate_n1_jobs_from_graph(f"job_vertices_{vertices}_layer_{n_layer}_reg_{formatted_time}",base_graph,n_graphs,n_layer,n_sample)
 
         job_ids = []
-        for n_layer in n_layers_array:
-            job_name = f"job_vertices_{vertices}_layer_{n_layer}_reg_+{formatted_time}"
-            job_script = return_slurm_array_test_script_job_execute_slurmarray_from_job_name_string(job_name, n_layer, n_graphs, n_sample)
-            job_id = submit_slurm_job(job_script)
-            job_ids.append(job_id)
+        job_name = f"job_vertices_{vertices}_layer_{n_layer}_reg_{formatted_time}"
+        job_script = return_slurm_array_test_script_job_execute_slurmarray_from_job_name_string(job_name, n_layer, n_graphs, n_sample)
+        job_id = submit_slurm_job(job_script)
+        job_ids.append(job_id)
 
-        while not check_job_id_state(job_ids): # continue check job state until it is completed
+        while not check_job_id_state_completed_or_failed(job_ids): # continue check job state until it is completed
             time.sleep(60) #wait a min
         
-        #check results, if < than last two times: continue_flag = false
-        #save smaller fqaoa result, assign new graph
+        if check_job_id_state_failed(job_ids):
+            break
+
+        #retrieve job results
+        result_list = []
+        for task_number in range(n_graphs):
+            result = retrieve_single_job_result(f"job_vertices_{vertices}_layer_{n_layer}_reg_+{formatted_time}task{str(task_number)}")
+            result_list.append(result)
+        
+        all_results.append(result_list)
+        
+        #get the minimum mean for fQAOA 
+        fQAOA_entries = [entry for entry in result_list if entry[0] == "fQAOA"]
+        min_mean_entry = min(fQAOA_entries, key=lambda x: x[4], default=None)  # Using 'mean' at index 4
+        result_graph_string = min_mean_entry[3] if min_mean_entry else "No entries found with cost_layer equal to 'fQAOA'."
+        
+        # get new graph
+        next_graph = string_graph_to_graph(result_graph_string)
+        base_graph = next_graph
 
         vertices += 1 #next vertice number
+
+
             
 
 
@@ -492,9 +509,11 @@ def get_possible_jobnames_from_params(n_vertices, n_layers, n_samples=400, n_ste
 
 def test_slurm_state():
     job_script = return_slurm_array_test_script_string()
+    print("job script obtained")
     job_id = submit_slurm_job(job_script)
+    print("slurm job submitted")
     print("job_ids: " + job_id)
-    check_job_id_state(job_id)
-    while not check_job_id_state(job_id):
-        print("waiting 15 sec")
-        time.sleep(15)
+    job_states = check_job_id_state(job_id, True)
+    while not check_job_id_state_completed_or_failed(job_id, True):
+        print("waiting 30 sec")
+        time.sleep(30)

@@ -44,7 +44,7 @@ if __name__ == '__main__':
         QAOA_jobs.job_execute_slurmarray_from_stored_job_name(stored_job_name, task_id, n_layers_array = [3], n_sample = 400)
      
     elif job_name == "job_vertices_converge_job":
-        QAOA_jobs.job_execute_vertice_converge_job(n_layers_array = [3], n_sample = 400)
+        QAOA_jobs.job_execute_vertice_converge_job(n_layer = [3], n_sample = 400)
     
     elif job_name == "job_process_results":
         QAOA_jobs.job_process_results(n_vertices=n_qubits, n_layers=n_layers, n_samples=400)

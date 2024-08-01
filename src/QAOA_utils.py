@@ -259,6 +259,14 @@ def format_job_name_from_result(job_result):
 def graph_to_string(graph):
     return "_"+str(graph).replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '').replace(',', '')
 
+def string_graph_to_graph(string_graph):
+    # Step 1: Extract digit pairs (ignore the leading underscore)
+    pairs = [string_graph[i:i+2] for i in range(1, len(string_graph), 2)]
+    
+    # Step 2: Convert pairs to tuples of integers
+    tuple_pairs = [tuple(map(int, pair)) for pair in pairs]
+    
+    return tuple_pairs
 
 def param_to_string(graph):
     return str(graph).replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '_').replace(',', '')
@@ -441,7 +449,7 @@ def submit_slurm_job(job_script):
     return match.group(1) if match else None
 
 def check_job_id_state(job_ids, verbose = False):
-    # Create a comma-separated string of job IDs
+     # Create a comma-separated string of job IDs
     job_ids_str = ','.join(map(str, job_ids))
 
     # Run the squeue command to check the status
@@ -454,7 +462,7 @@ def check_job_id_state(job_ids, verbose = False):
         print("subprocess result: " + result)
         print("lines result " + lines)
 
-    
+    job_states = []
     # Check if there are any jobs that are not completed
     if len(lines) > 1:  # The first line is the header
         # Extract job states
@@ -462,14 +470,38 @@ def check_job_id_state(job_ids, verbose = False):
             columns = line.split()
             job_id = columns[0]  # First column is the job ID
             job_state = columns[4]  # State is usually in the 5th column
-            
+            job_states.append((job_id,job_state))
             if verbose:
                 print("columns result: " + columns)
                 print("job_id result " + job_id)
                 print("job_state result: " + job_state)
 
-            if job_state not in ['CD', 'F']:  # 'CD' is Completed, 'F' is Failed
-                print(f"Job {job_id} is not completed. Current state: {job_state}")
-                return False
+    return job_states
+
+
+
+def check_job_id_state_completed_or_failed(job_ids, verbose = False):
+    
+    # Create a comma-separated string of job IDs
+    job_states = check_job_id_state(job_ids, verbose)
+
+    print("job states: " + job_states)
+    #check all completed
+    for job_state in job_states:
+        if job_state[0] not in ['CD', 'F']:  # 'CD' is Completed, 'F' is Failed
+            print(f"Job {job_state[0]} is not completed. Current state: {job_state}")
+            return False
+    
     return True
     
+def check_job_id_state_failed(job_ids, verbose = False):
+        # Create a comma-separated string of job IDs
+    job_states = check_job_id_state(job_ids, verbose)
+
+    #check if one has failed
+    for job_state in job_states:
+        if job_state[0] in ['F']:  # 'CD' is Completed, 'F' is Failed
+            print(f"Job {job_state[0]} has failed. Current state: {job_state}")
+            return False
+    
+    return True
