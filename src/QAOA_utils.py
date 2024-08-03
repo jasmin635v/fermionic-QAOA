@@ -111,6 +111,13 @@ def parse_args(parser=None):
         help="max unlabeled graphs",
     )
 
+    parser.add_argument(
+        "--start_graph",
+        type=str,
+        default="10",
+        help="max unlabeled graphs",
+    )
+
 
 
     return parser.parse_args()
@@ -268,6 +275,13 @@ def string_graph_to_graph(string_graph):
     
     return tuple_pairs
 
+
+def vertice_from_graph(graph):
+    str_graph = graph_to_string(graph)
+    graph = string_graph_to_graph(str_graph)
+    max_vertice = max(max(edge) for edge in graph)
+    return max_vertice
+
 def param_to_string(graph):
     return str(graph).replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '_').replace(',', '')
 
@@ -310,7 +324,6 @@ def remove_npy_files(filenames):
             print(f"Deleted: {filename}")
         else:
             print(f"{filename} does not exist.")
-
 
 def return_slurm_array_test_script_string(account= "def-ko1"):
     script_string = f"""#!/bin/bash
@@ -417,9 +430,6 @@ def return_slurm_array_test_script_job_execute_slurmarray_from_job_name_string(s
     """
     return script_string
 
-
-
-
 def submit_slurm_job(job_script):
     # Create a temporary SLURM script
     slurm_script = "slurm_temp_job.sh"
@@ -435,14 +445,14 @@ def submit_slurm_job(job_script):
 
     # Submit the SLURM job and capture the output
     result = subprocess.run(["sbatch", slurm_script], capture_output=True, text=True)
-    print("slurm result: " + result)
-    print("slurm result stdout: " + result.stdout)
+    print("slurm result: " + str(result))
+    print("slurm result stdout: " + str(result.stdout))
     
     # Extract job ID from the output
      #   """Extracts the job ID from the sbatch output."""
-    match = re.search(r'Submitted batch job (\d+)', result.stdout)
+    match = re.search(r'Submitted batch job (\d+)', str(result.stdout))
 
-    print("slurm result search match: " + match)   
+    print("slurm result search match: " + str(match))   
 
     os.remove(slurm_script)
 
@@ -477,8 +487,6 @@ def check_job_id_state(job_ids, verbose = False):
                 print("job_state result: " + job_state)
 
     return job_states
-
-
 
 def check_job_id_state_completed_or_failed(job_ids, verbose = False):
     

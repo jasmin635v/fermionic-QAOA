@@ -78,7 +78,7 @@ def generate_all_n1_graphs_from_n_graph(graph): # graph format [(0, 1), (2, 3)]
   
     graphs = add_graph_to_list_isomorphics(graphs)
 
-    return all_combinations
+    return graphs
 
 def get_mean_automorphism_count_per_edge_number(graph_edge_automorphisms_edgenum_lists):
 

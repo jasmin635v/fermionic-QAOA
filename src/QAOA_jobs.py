@@ -120,16 +120,19 @@ def generate_job_list(isomorphic_graph_lists, n_layers, n_steps, n_samples, n_ve
     job_lists_fQAOA = [[graph, n_vertices, n_layers, "fQAOA", f"unlabeledGraph_{
         graph_to_string(graph)}", n_steps, n_samples] for graph in isomorphic_graph_lists]
     job_lists_iso = []
-    for ii, graph in enumerate(isomorphic_graph_lists):
-        isomorphic_graphs = graph_methods.generate_isomorphics_from_combination(
-            graph, max_isomorphism_number=n_isomorph_max)
-        # the first generated isomorphic graph is identity
-        isomorphic_graphs = isomorphic_graphs[1:]
-        for ij, isomorph_graph in enumerate(isomorphic_graphs):
-            job_lists_iso.append([isomorph_graph, n_vertices, n_layers, "QAOA", f"isomorphGraph{
-                                 ij}_{graph_to_string(graph)}", n_steps, n_samples])
-            job_lists_iso.append([isomorph_graph, n_vertices, n_layers, "fQAOA", f"isomorphGraph{
-                                 ij}_{graph_to_string(graph)}", n_steps, n_samples])
+
+    if n_isomorph_max > 0:
+
+        for ii, graph in enumerate(isomorphic_graph_lists):
+            isomorphic_graphs = graph_methods.generate_isomorphics_from_combination(
+                graph, max_isomorphism_number=n_isomorph_max)
+            # the first generated isomorphic graph is identity
+            isomorphic_graphs = isomorphic_graphs[1:]
+            for ij, isomorph_graph in enumerate(isomorphic_graphs):
+                job_lists_iso.append([isomorph_graph, n_vertices, n_layers, "QAOA", f"isomorphGraph{
+                                    ij}_{graph_to_string(graph)}", n_steps, n_samples])
+                job_lists_iso.append([isomorph_graph, n_vertices, n_layers, "fQAOA", f"isomorphGraph{
+                                    ij}_{graph_to_string(graph)}", n_steps, n_samples])
 
     all_jobs = job_lists_QAOA + job_lists_fQAOA + job_lists_iso
 
@@ -184,14 +187,24 @@ def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max
     print(f"Elapsed time: {elapsed_time} seconds")
     return all_jobs
 
-def generate_n1_jobs_from_graph(jobname, graph, n_jobs, n_layers = 3, n_samples=400):
+def generate_store_n1_jobs_from_graph(jobname, graph, n_jobs, n_layers = 3, n_samples=400):
+    n1_jobs = generate_n1_jobs_from_graph(jobname, graph, n_jobs, n_layers = 3, n_samples=400)
+    store_jobs(n1_jobs,jobname)
+
+def generate_n1_jobs_from_graph(graph, n_jobs, n_layers = 3, n_samples=400):
+    graph_str= graph_to_string(graph)
+    graph = string_graph_to_graph(graph_str)
     max_vertice = max(max(edge) for edge in graph)
     new_vertice = max_vertice + 1
-    n1_graphs = graph_methods.generate_all_n1_graphs_from_n_graph(graph)
-    n1_graphs_sorted = sorted(n1_graphs, key=lambda x: x[1])
-    n1_graphs_sorted_slice = [unlbl_graph for unlbl_graph in n1_graphs_sorted if n1_graphs_sorted[0] == n1_graphs_sorted[2]][:n_jobs]
-    n1_jobs = generate_job_list(n1_graphs_sorted_slice,n_layers,None,n_samples,new_vertice,0)
-    store_jobs(n1_jobs,jobname+"_"+str(new_vertice))
+    n1_graphs = graph_methods.generate_all_n1_graphs_from_n_graph(graph)  
+    n1_graphs_unlbl = [unlbl_graph for unlbl_graph in n1_graphs if unlbl_graph[0] == unlbl_graph[2]]
+    n1_graphs_sorted = sorted(n1_graphs_unlbl, key=lambda x: x[1],reverse=True)
+    n1_graphs_sorted_slice = n1_graphs_sorted[:n_jobs] 
+
+    n1_graphs_sorted_slice_graphs = [list(item[0].edges()) for item in n1_graphs_sorted_slice]
+
+    n1_jobs = generate_job_list(n1_graphs_sorted_slice_graphs,n_layers,None,n_samples,new_vertice,0)
+    return n1_jobs
 
 def job_multiprocess(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None, parallel_task=True):
         #multiprocessing doesnt work properly on slurm, do not use
@@ -246,7 +259,7 @@ def store_jobs(jobs, job_names):
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # Create the corresponding directory
+    # Create the corresponding directory
     subdirectory = os.path.join(script_dir, "stored_jobs")
 
     # Check if the subdirectory exists and create it if it doesn't
@@ -311,7 +324,7 @@ def job_execute_slurmarray(n_vertices, n_layers_array, n_steps=None, n_samples=4
         jobname = get_result_name_from_job(all_jobs[task_id])
         save_single_job_result(result, jobname)
 
-def job_execute_slurmarray_from_stored_job_name(jobname, task_id, n_layers_array = [3], n_sample = 400):
+def job_slurm_execute_slurmarray_from_stored_job_graph_name(jobname, task_id, n_layers_array = [3], n_sample = 400):
 
     all_jobs_graphs = retrieve_stored_jobs(jobname)
     for n_layers in n_layers_array:
@@ -322,6 +335,19 @@ def job_execute_slurmarray_from_stored_job_name(jobname, task_id, n_layers_array
         all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps = None, n_samples = n_sample)
         result = execute_slurmarray(all_jobs, task_id=task_id)
         save_single_job_result(result, jobname+"task"+str(task_id))
+
+def job_execute_slurmarray_from_stored_job_name(jobname, task_id, add_last_job_column_to_result = True):
+
+    all_jobs = retrieve_stored_jobs(jobname)
+    if task_id is None or task_id == -1:
+        return
+
+    result = execute_slurmarray(all_jobs, task_id=task_id)
+
+    if add_last_job_column_to_result:
+        result = [result, all_jobs[task_id][-1]]
+
+    save_single_job_result(result, jobname+"task"+str(task_id))
 
 def job_execute_vertice_converge_job(n_layer = 3, n_sample = 400, n_graphs = 3):
 
@@ -336,7 +362,7 @@ def job_execute_vertice_converge_job(n_layer = 3, n_sample = 400, n_graphs = 3):
     vertices = 5
     while continue_flag:
 
-        generate_n1_jobs_from_graph(f"job_vertices_{vertices}_layer_{n_layer}_reg_{formatted_time}",base_graph,n_graphs,n_layer,n_sample)
+        generate_store_n1_jobs_from_graph(f"job_vertices_{vertices}_layer_{n_layer}_reg_{formatted_time}",base_graph,n_graphs,n_layer,n_sample)
 
         job_ids = []
         job_name = f"job_vertices_{vertices}_layer_{n_layer}_reg_{formatted_time}"
@@ -369,11 +395,6 @@ def job_execute_vertice_converge_job(n_layer = 3, n_sample = 400, n_graphs = 3):
 
         vertices += 1 #next vertice number
 
-
-            
-
-
-
 def execute_slurmarray(all_jobs, task_id=None):
     
     mock = False #set true in debug
@@ -396,10 +417,12 @@ def execute_slurmarray(all_jobs, task_id=None):
         #save_single_job_result(result, jobname)
 
 def job_retrieve_merge_results(n_vertices, n_layers, n_samples):
-
-    # graph, n_vertices, label
     result_name = []
     result_names= get_possible_jobnames_from_params(n_vertices, n_layers, n_samples)
+    results_list = retrieve_result_list(result_names)
+    return results_list
+
+def retrieve_result_list(result_names):
 
     results_list = []
     for result_name in result_names:
@@ -411,6 +434,11 @@ def job_retrieve_merge_results(n_vertices, n_layers, n_samples):
         results_list.append(result)
 
     return results_list
+
+def job_retrieve_merge_results_from_jobname(jobname):
+    result_names = get_results_with_jobname([jobname])
+    results_list = retrieve_result_list(result_names)
+    process_results_save(results_list,jobname)
 
 def job_process_results(n_vertices, n_layers, n_steps= None, n_samples = None, n_isomorph_max = None, max_unlabeled_graph = None, max_job = None):
     print(f"start of result merge vertice {n_vertices}, layers {str(n_layers)}, n_samples {n_samples}")
@@ -483,7 +511,6 @@ def process_results_save(results_list, jobnames):
     # Construct the file path
     file_path = os.path.join(subdirectory, jobnames + ".txt")
 
-    # Save the results list to the specified JSON file
     with open(file_path, 'w') as f:
         json.dump(results_list, f)
     print("saved")
@@ -493,15 +520,27 @@ def job_generate_save_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph=Non
     job_names_graph = get_job_names_from_parameters_graphs( n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
     store_jobs(all_jobs_graphs, job_names_graph)
 
-def get_possible_jobnames_from_params(n_vertices, n_layers, n_samples=400, n_steps=None):
-    
-    #parameters = [f"vertices_{n_vertices}", f"layers_{n_layers}", f"steps_{n_steps}", ]
+def job_generate_save_graphs_vertice_sequence(initial_graph, jobname = "job-sequence", n_graphs =3, depth =3, n_layer = 3, n_samples = 400 ):
+    n1_graphs_jobs = generate_n1_jobs_from_graph(initial_graph,n_graphs,n_layer,n_samples)
+    [n1_graphs_job.append(graph_to_string(initial_graph)) for n1_graphs_job in n1_graphs_jobs]
+    all_jobs = []
+    all_jobs.extend(n1_graphs_jobs)
+    for n1_graph_job in n1_graphs_jobs:
+        graph = n1_graph_job[0]
+        n2_graph_jobs = generate_n1_jobs_from_graph(graph,n_graphs,n_layer,n_samples)
+        [n2_graph_job.append(graph_to_string(n1_graph_job[0])) for n2_graph_job in n2_graph_jobs]
+        all_jobs.extend(n2_graph_jobs)
 
-    parameters = [f"vertices_{n_vertices}", f"layers_{n_layers}",f"samples_{n_samples}"]      
+    store_jobs(all_jobs, jobname)
+
+def get_possible_jobnames_from_params(n_vertices, n_layers, n_samples=400, n_steps=None):
+    parameters = [f"vertices_{n_vertices}", f"layers_{n_layers}",f"samples_{n_samples}"]    
+    return  get_results_with_jobname(parameters)
+
+def get_results_with_jobname(parameters):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     subdirectory = os.path.join(script_dir, "stored_job_results")
     all_files = os.listdir(subdirectory)
-    # Filter the files to keep only .npy files
     json_files = [f for f in all_files if f.endswith('.json')]
     filtered_files = [f for f in json_files if all(
         sub in f for sub in parameters)]
@@ -514,6 +553,7 @@ def test_slurm_state():
     print("slurm job submitted")
     print("job_ids: " + job_id)
     job_states = check_job_id_state(job_id, True)
+    print(job_states)
     while not check_job_id_state_completed_or_failed(job_id, True):
         print("waiting 30 sec")
         time.sleep(30)
