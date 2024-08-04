@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     elif job_name == "job_process_results_from_jobname":
         print(" job: job_process_results_from_jobname")
-        QAOA_jobs.job_retrieve_merge_results_from_jobname(job_name)
+        QAOA_jobs.job_retrieve_merge_results_from_jobname(stored_job_name)
 
     elif job_name == "job_process_results_layers":
         print(" job: job_process_results_layers")

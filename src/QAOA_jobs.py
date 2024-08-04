@@ -242,7 +242,6 @@ def execute_single_job(job, mock = False):
         print(" new vertice from graph: " + str(vertice))
         job[1] = vertice
 
-
     if mock == False:
         result = execute_qaoa_subjob(
             job[0], job[1], job[2], job[3], job[4], job[5], job[6])
