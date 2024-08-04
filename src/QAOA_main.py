@@ -44,10 +44,7 @@ if __name__ == '__main__':
     elif job_name == "job_execute_slurmarray":
         QAOA_jobs.job_execute_slurmarray(n_vertices=n_qubits, n_layers_array=n_layers, n_samples=400, n_steps="None", max_unlabeled_graph=maxunlblgraph, n_isomorph_max=max_isomorph_number, max_job=max_job, task_id=task_id)
 
-    elif job_name == "job_slurm_execute_slurmarray_from_jobname": #used internally to spawn jobs
-        QAOA_jobs.job_slurm_execute_slurmarray_from_stored_job_graph_name(stored_job_name, task_id, n_layers_array = [3], n_sample = 400)
-
-    elif job_name == "job_slurm_execute_slurmarray_from_jobname": #used internally to spawn jobs
+    elif job_name == "job_slurm_execute_slurmarray_from_job_graph_name": #used internally to spawn jobs
         QAOA_jobs.job_slurm_execute_slurmarray_from_stored_job_graph_name(stored_job_name, task_id, n_layers_array = [3], n_sample = 400)
 
     elif job_name == "job_execute_slurm_array_from_jobname":
