@@ -280,7 +280,7 @@ def vertice_from_graph(graph):
     str_graph = graph_to_string(graph)
     graph = string_graph_to_graph(str_graph)
     max_vertice = max(max(edge) for edge in graph)
-    return max_vertice
+    return max_vertice + 1
 
 def param_to_string(graph):
     return str(graph).replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '_').replace(',', '')

@@ -235,8 +235,11 @@ def execute_single_job(job, mock = False):
     graph_overwritten = string_graph_to_graph(graph_to_string(job[0]))
     vertice = vertice_from_graph(graph=graph_overwritten)
 
-    if str(vertice) != str(job[1]):  
-        print(" new vertice from graph: " + vertice)
+    vertice_from_graph_int = int(vertice)
+    vertice_from_job = int(job[1])
+
+    if vertice_from_graph_int > vertice_from_job:  
+        print(" new vertice from graph: " + str(vertice))
         job[1] = vertice
 
 
