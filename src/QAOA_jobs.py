@@ -230,6 +230,16 @@ def execute_single_job(job, mock = False):
 
     # [[[0, 1], [2, 3]], 4, 4, "QAOA", "unlabeledGraph_0123", 20, 100]
     # (graph,n_vertices, n_layers, cost_layer, label, n_steps = 30, n_samples = 200):
+
+    #overwrite number of vertice if needed by graph   
+    graph_overwritten = string_graph_to_graph(graph_to_string(job[0]))
+    vertice = vertice_from_graph(graph=graph_overwritten)
+
+    if vertice != job[1]:
+        print(" new vertice from graph: " + vertice)
+        job[1] = vertice
+
+
     if mock == False:
         result = execute_qaoa_subjob(
             job[0], job[1], job[2], job[3], job[4], job[5], job[6])
