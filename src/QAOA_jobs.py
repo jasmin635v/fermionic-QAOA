@@ -62,7 +62,7 @@ def calculate_add_ratios_to_results_list(results_list):  # UNUSED
 
 def execute_qaoa_subjob(graph, n_vertices, n_layers, cost_layer, label, n_steps=30, n_samples=200):
     # [isomorph_graph,n_vertices, n_layers, "QAOA", f"isomorphGraph{ii}_{graph_to_string(graph)}", n_steps, n_samples]
-    print(f"    start of job execution of {label} - {n_layers} layers")
+    print(f"    start of job execution of {label} - Graph {graph_to_string(graph)} - Vertices {n_vertices} - layers {n_layers} - samples {n_samples}")
 
     np.random.seed(42)
     # (graph, n_wires, n_layers, cost_layer = "QAOA", n_steps = 30, n_samples = 200, lightning_device = True, mixer_layer = "fermionic_Ryy"):
@@ -235,7 +235,7 @@ def execute_single_job(job, mock = False):
     graph_overwritten = string_graph_to_graph(graph_to_string(job[0]))
     vertice = vertice_from_graph(graph=graph_overwritten)
 
-    if vertice != job[1]:
+    if str(vertice) != str(job[1]):  
         print(" new vertice from graph: " + vertice)
         job[1] = vertice
 
