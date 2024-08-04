@@ -496,8 +496,6 @@ def job_process_merged_sequence_results_from_jobname(jobname):
             fifth_elem = sublist[4]/score  # Get the mean score normalized on real score
             last_elem = sublist[-1]
 
-
-
             # Update the dictionary with the required elements
             if "fQAOA" in first_elem:
                 merged_dict[second_elem][0] = third_elem      # Store the third element of fQAOA
@@ -599,15 +597,17 @@ def job_generate_save_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph=Non
     job_names_graph = get_job_names_from_parameters_graphs( n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
     store_jobs(all_jobs_graphs, job_names_graph)
 
-def job_generate_save_graphs_vertice_sequence(initial_graph, jobname = "job-sequence", n_graphs =3, depth =3, n_layer = 3, n_samples = 400 ):
+def job_generate_save_graphs_vertice_sequence(initial_graph, jobname = "job-sequence", n_graphs =3, n_layer = 3, n_samples = 400):
+    initial_graph = string_graph_to_graph(graph_to_string(initial_graph))
     n1_graphs_jobs = generate_n1_jobs_from_graph(initial_graph,n_graphs,n_layer,n_samples)
-    [n1_graphs_job.append(graph_to_string(initial_graph)) for n1_graphs_job in n1_graphs_jobs]
+    [n1_graphs_job.extend([graph_to_string(initial_graph)]) for n1_graphs_job in n1_graphs_jobs]
     all_jobs = []
     all_jobs.extend(n1_graphs_jobs)
     for n1_graph_job in n1_graphs_jobs:
         graph = n1_graph_job[0]
+        graph_string = graph_to_string(n1_graph_job[0])
         n2_graph_jobs = generate_n1_jobs_from_graph(graph,n_graphs,n_layer,n_samples)
-        [n2_graph_job.append(graph_to_string(n1_graph_job[0])) for n2_graph_job in n2_graph_jobs]
+        [n2_graph_job.extend([graph_string]) for n2_graph_job in n2_graph_jobs]
         all_jobs.extend(n2_graph_jobs)
 
     store_jobs(all_jobs, jobname)

@@ -37,8 +37,8 @@ if __name__ == '__main__':
         print(" job: job_generate_graphs")
         QAOA_jobs.job_generate_save_graphs(n_vertices=n_qubits, n_isomorph_max=max_isomorph_number, max_unlabeled_graph=maxunlblgraph, max_job=max_job)
 
-    if job_name == "job_generate_graphs_vertice_sequence":
-        print(" job: job_generate_graphs_vertice_sequence")
+    if job_name == "job_generate_graphs_sequence":
+        print(" job: job_generate_graphs_sequence")
         QAOA_jobs.job_generate_save_graphs_vertice_sequence(start_graph,stored_job_name)
 
     #STEP 2: run this from slurm with a slurm array. max_unlabeled_graph, n_isomorph_max and max_job parameters will fetch the previously created graph list
@@ -55,8 +55,7 @@ if __name__ == '__main__':
         print(" job: job_execute_slurm_array_from_jobname")
         print(" job name: " + str(stored_job_name))
         QAOA_jobs.job_execute_slurmarray_from_stored_job_name(stored_job_name, task_id)
-    
-   
+     
     elif job_name == "job_process_results":
         print(" job: job_process_results")
         QAOA_jobs.job_process_results(n_vertices=n_qubits, n_layers=n_layers, n_samples=400)

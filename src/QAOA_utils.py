@@ -262,9 +262,8 @@ def format_job_name_from_result(job_result):
     graph_string = graph_to_string(job_result[2])
     return f"{job_result[0]}_{job_result[1]}_{graph_string}.npy"
 
-
 def graph_to_string(graph):
-    return "_"+str(graph).replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '').replace(',', '')
+    return "_"+str(graph).replace('_','').replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace(' ', '').replace(',', '')
 
 def string_graph_to_graph(string_graph):
     # Step 1: Extract digit pairs (ignore the leading underscore)
@@ -274,7 +273,6 @@ def string_graph_to_graph(string_graph):
     tuple_pairs = [tuple(map(int, pair)) for pair in pairs]
     
     return tuple_pairs
-
 
 def vertice_from_graph(graph):
     str_graph = graph_to_string(graph)
