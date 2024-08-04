@@ -1,6 +1,6 @@
 import networkx as nx
 from itertools import combinations, groupby
-import math, time
+import math, time, random
 
 # connected (no free vertices)  graphs with n nodes:
 
@@ -315,5 +315,40 @@ def generate_all_graphs(n):
 
     return all_graphs
 
+def classical_max_cut_score(edges):
+    # Create a graph from the list of edges
+    G = nx.Graph()
+    G.add_edges_from(edges)
 
+    # Randomly initialize the partition
+    partition = {node: random.choice([0, 1]) for node in G.nodes()}
+
+    # Initialize the maximum cut score
+    max_cut_value = 0
+
+    # Calculate the initial cut value
+    for u, v in G.edges():
+        if partition[u] != partition[v]:
+            max_cut_value += 1
+
+    # Perform a simple greedy algorithm to improve the cut
+    for _ in range(100):  # Iterate a set number of times
+        for node in G.nodes():
+            # Flip the partition of the node
+            original_partition = partition[node]
+            partition[node] = 1 - original_partition
+            
+            # Calculate the new cut value
+            new_cut_value = 0
+            for u, v in G.edges():
+                if partition[u] != partition[v]:
+                    new_cut_value += 1
+            
+            # If the new cut value is worse, revert the change
+            if new_cut_value < max_cut_value:
+                partition[node] = original_partition
+            else:
+                max_cut_value = new_cut_value
+
+    return max_cut_value
 #combos = generate_all_n1_graphs_from_n_graph([(0,1),(1,2)])

@@ -56,10 +56,7 @@ if __name__ == '__main__':
         print(" job name: " + str(stored_job_name))
         QAOA_jobs.job_execute_slurmarray_from_stored_job_name(stored_job_name, task_id)
     
-    elif job_name == "job_vertices_converge_job": #Work in progress
-        print(" job: job_vertices_converge_job")
-        QAOA_jobs.job_execute_vertice_converge_job(n_layer = [3], n_sample = 400)
-    
+   
     elif job_name == "job_process_results":
         print(" job: job_process_results")
         QAOA_jobs.job_process_results(n_vertices=n_qubits, n_layers=n_layers, n_samples=400)
@@ -67,6 +64,10 @@ if __name__ == '__main__':
     elif job_name == "job_process_results_from_jobname":
         print(" job: job_process_results_from_jobname")
         QAOA_jobs.job_retrieve_merge_results_from_jobname(stored_job_name)
+    
+    elif job_name == "job_process_merged_sequence_results_from_jobname":
+        print(" job: job_process_merged_sequence_results_from_jobname")
+        QAOA_jobs.job_process_merged_sequence_results_from_jobname(stored_job_name)
 
     elif job_name == "job_process_results_layers":
         print(" job: job_process_results_layers")
