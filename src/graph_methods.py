@@ -1,6 +1,6 @@
 import networkx as nx
 from itertools import combinations, groupby
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import math, time, random
 
 
@@ -45,8 +45,8 @@ def plot_digraph(data):
     nx.draw_networkx_labels(G, pos, labels, font_size=10)
 
     # Show plot
-    plt.title("Data Relationships")
-    plt.show()
+    #plt.title("Data Relationships")
+    #plt.show()
 
 def return_graph_from_combination(combination, nodes = None):
 
