@@ -44,7 +44,7 @@ def plot_digraph(data):
     nx.draw(G, pos, with_labels=False, node_size=2000, node_color='lightblue', font_size=10, font_weight='bold')
     nx.draw_networkx_labels(G, pos, labels, font_size=10)
 
-    # Show plot
+    #Show plot
     #plt.title("Data Relationships")
     #plt.show()
 
