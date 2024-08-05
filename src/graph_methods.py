@@ -1,6 +1,8 @@
 import networkx as nx
 from itertools import combinations, groupby
+import matplotlib.pyplot as plt
 import math, time, random
+
 
 # connected (no free vertices)  graphs with n nodes:
 
@@ -10,30 +12,41 @@ import math, time, random
 
 #connected means that no vertice has no edge, not that all vertices have a path between then
 
-def plot_xylists(xy_lists):
-    num_subplots = len(xy_lists)
-    if num_subplots == 0:
-        return
-    
-    #fig, axes = plt.subplots(num_subplots, 1, figsize=(8, 16))
 
-    # Iterate over list_of_list_of_data and plot each list_of_data as a subplot
-    for i, list_of_data in enumerate(xy_lists):
-        title = list_of_data[0][2]
-        x_values = [pair[0] for pair in list_of_data]
-        y_values = [pair[1] for pair in list_of_data]
-        # axes[i].scatter(x_values, y_values, color='blue', marker='o', s=50, alpha=0.8)
-        # axes[i].set_title(f'Graph with {title} Vertices')
-        # axes[i].set_xlabel('Number of edges')
-        # axes[i].set_ylabel('Mean automorphism number')
-        # axes[i].set_xlim(left=0)     
-        # axes[i].grid(True)
+def plot_digraph(data):
+# Example input data
+# data = [
+#     ['A', 1, 2, None],
+#     ['B', 4, 5, 'A'],
+#     ['C', 7, 8, 'A'],
+#     ['D', 10, 11, 'B'],
+#     ['E', 12, 13, 'C']
+# ]
 
+    # Create a directed graph
+    G = nx.DiGraph()
 
-    # Adjust layout and display the plot
-    # fig.subplots_adjust(hspace=1)
-    # plt.tight_layout()
-    # plt.show()
+    # Add nodes with values as labels
+    for element, v1, v2, ancestor in data:
+        label = f'{element}\n({v1}, {v2})'
+        G.add_node(element, label=label)
+
+    # Add edges based on ancestor relationships
+    for element, _, _, ancestor in data:
+        if ancestor:
+            G.add_edge(ancestor, element)
+
+    # Draw the graph
+    pos = nx.spring_layout(G)  # positions for all nodes
+    labels = nx.get_node_attributes(G, 'label')
+
+    # Draw nodes and edges
+    nx.draw(G, pos, with_labels=False, node_size=2000, node_color='lightblue', font_size=10, font_weight='bold')
+    nx.draw_networkx_labels(G, pos, labels, font_size=10)
+
+    # Show plot
+    plt.title("Data Relationships")
+    plt.show()
 
 def return_graph_from_combination(combination, nodes = None):
 

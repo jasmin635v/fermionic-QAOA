@@ -476,41 +476,37 @@ def job_retrieve_merge_results_from_jobname(jobname):
     process_results_save(results_list,jobname)
 
 def job_process_merged_sequence_results_from_jobname(jobname):
-
-    
+   
     def merge_sublists(merged_results):
         # Flatten the input structure, keeping the original lists intact
-        flattened_list = [sublist[0] + [sublist[1]] for sublist in merged_results]
+        #flattened_list = [sublist[0] + [sublist[1]] for sublist in merged_results]
 
         # Dictionary to store merged results for each unique second element
-        merged_dict = defaultdict(lambda: [None, None, None, None, None])  # Updated to store additional elements
+        merged_dict = defaultdict(lambda: [None, None, None, None])  # Updated to store additional elements
 
-        for sublist in flattened_list:
+        for sublist in merged_results:
 
             #classical maxcut score
             score = graph_methods.classical_max_cut_score(string_graph_to_graph(sublist[2]))
 
-            first_elem = sublist[0]
-            second_elem = sublist[1]
-            third_elem = sublist[2]
-            fifth_elem = sublist[4]/score  # Get the mean score normalized on real score
-            last_elem = sublist[-1]
+            cost_layer = sublist[0]
+            graph = sublist[2]
+            mean = sublist[4]/score  # Get the mean score normalized on real score
+            generating_graph = sublist[-1]
 
             # Update the dictionary with the required elements
-            if "fQAOA" in first_elem:
-                merged_dict[second_elem][0] = third_elem      # Store the third element of fQAOA
-                merged_dict[second_elem][1] = fifth_elem       # Store the fifth element of fQAOA
-                merged_dict[second_elem][2] = last_elem        # Store the last element of fQAOA
-            elif "QAOA" in first_elem:
-                merged_dict[second_elem][3] = fifth_elem       # Store the fifth element of QAOA
+            if "fQAOA" in cost_layer:
+                merged_dict[graph][1] = mean                    # Store the fifth element of fQAOA
+                merged_dict[graph][3] = generating_graph        # Store the last element of fQAOA
+            elif "QAOA" in cost_layer:
+                merged_dict[graph][2] = mean                    # Store the fifth element of QAOA
 
         # Convert the dictionary back to a list of merged sublists
         merged_results_flattened = [
-            [values[0], second_elem, values[1], values[3], values[2]] for second_elem, values in merged_dict.items()
+            [second_elem, values[1], values[2], values[3]] for second_elem, values in merged_dict.items()
         ]
         
         return merged_results_flattened
-
 
     merged_results = retrieve_merged_file(jobname)
     merged_results_flatten = merge_sublists(merged_results)
@@ -625,14 +621,14 @@ def get_results_with_jobname(parameters):
         sub in f for sub in parameters)]
     return filtered_files
 
-def get_results_with_jobname(parameters):
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    subdirectory = os.path.join(script_dir, "merged_processed_results")
-    all_files = os.listdir(subdirectory)
-    json_files = [f for f in all_files if f.endswith('.txt')]
-    filtered_files = [f for f in json_files if all(
-        sub in f for sub in parameters)]
-    return filtered_files 
+# def get_results_with_jobname(parameters):
+#     script_dir = os.path.dirname(os.path.abspath(__file__))
+#     subdirectory = os.path.join(script_dir, "merged_processed_results")
+#     all_files = os.listdir(subdirectory)
+#     json_files = [f for f in all_files if f.endswith('.txt')]
+#     filtered_files = [f for f in json_files if all(
+#         sub in f for sub in parameters)]
+#     return filtered_files 
 
 def test_slurm_state():
     job_script = return_slurm_array_test_script_string()
