@@ -479,12 +479,12 @@ def job_process_merged_sequence_results_from_jobname(jobname):
    
     def merge_sublists(merged_results):
         # Flatten the input structure, keeping the original lists intact
-        flattened_list = [sublist[0] + [sublist[1]] for sublist in merged_results]
+        flattened_list = [sublist_merge[0] + [sublist_merge[1]] for sublist_merge in merged_results]
 
         # Dictionary to store merged results for each unique second element
         merged_dict = defaultdict(lambda: [None, None, None, None])  # Updated to store additional elements
 
-        for sublist in merged_results:
+        for sublist in flattened_list:
 
             #classical maxcut score
             score = graph_methods.classical_max_cut_score(string_graph_to_graph(sublist[2]))
