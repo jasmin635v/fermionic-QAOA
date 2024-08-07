@@ -487,11 +487,11 @@ def job_process_merged_sequence_results_from_jobname(jobname):
         for sublist in flattened_list:
 
             #classical maxcut score
-            score = graph_methods.classical_max_cut_score(string_graph_to_graph(sublist[2]))
+            #score = graph_methods.classical_max_cut_score(string_graph_to_graph(sublist[2]))
 
             cost_layer = sublist[0]
             graph = sublist[2]
-            mean = sublist[4]/score  # Get the mean score normalized on real score
+            mean = sublist[4] # Get the mean score normalized on real score
             generating_graph = sublist[-1]
 
             # Update the dictionary with the required elements

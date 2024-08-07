@@ -239,7 +239,7 @@ def calculate_plot_mean_automorphism_count_per_edge_number(vertices_choice):
         edge_meancount_vertices_number = [item + [str(n) + " vertices"] for item in edge_meancount]
         edge_count_lists.append(edge_meancount_vertices_number)
 
-    plot_xylists(edge_count_lists)
+    #plot_xylists(edge_count_lists)
 
 def draw_graph(combination , ax = None):
     G = return_graph_from_combination(combination)
