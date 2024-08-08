@@ -304,6 +304,7 @@ tmp_report_dir
 coverage.json
 src/pkg/progress.txt
 src/local_script.py
+src/local_script2.py
 .vscode/launch.json
 .vscode/launch.json
 stored_jobs/job1-vertices_5_isomorphmax_0_maxunlabeledgraph_None_maxjob_4.json

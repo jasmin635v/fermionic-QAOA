@@ -41,6 +41,11 @@ if __name__ == '__main__':
         print(" job: job_generate_graphs_sequence")
         QAOA_jobs.job_generate_save_graphs_vertice_sequence(start_graph,stored_job_name)
 
+
+    if job_name == "job_generate_graphs_vertice56":
+        print(" job: job_generate_graphs_vertice56")
+        QAOA_jobs.job_generate_save_graphs_vertice56(stored_job_name)
+
     #STEP 2: run this from slurm with a slurm array. max_unlabeled_graph, n_isomorph_max and max_job parameters will fetch the previously created graph list
     #use the size of slurm array corresponding to the number of jobs
     elif job_name == "job_execute_slurmarray":

@@ -162,8 +162,7 @@ def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max
         max_job = -1
 
 
-    unlabeled_graphs = graph_methods.generate_all_connected_graphs(
-        n_vertices, True)
+    unlabeled_graphs = graph_methods.generate_all_connected_graphs(n_vertices, True)
     print(f"graphs generated")
 
     unlabeled_graphs_graphs = [graph[0] for graph in unlabeled_graphs]
@@ -606,6 +605,14 @@ def job_generate_save_graphs_vertice_sequence(initial_graph, jobname = "job-sequ
         [n2_graph_job.extend([graph_string]) for n2_graph_job in n2_graph_jobs]
         all_jobs.extend(n2_graph_jobs)
 
+    store_jobs(all_jobs, jobname)
+
+def job_generate_save_graphs_vertice56(jobname = "job56"):
+    unlabeled_graphs_5 = graph_methods.generate_all_connected_graphs(5, True)
+    unlabeled_graphs_6 = graph_methods.generate_all_connected_graphs(6, True)
+    all_jobs_5 = generate_job_graphslist(unlabeled_graphs_5, 5, 0)
+    all_jobs_6 = generate_job_graphslist(unlabeled_graphs_6, 6, 0)
+    all_jobs = all_jobs_5 + all_jobs_6
     store_jobs(all_jobs, jobname)
 
 def get_possible_jobnames_from_params(n_vertices, n_layers, n_samples=400, n_steps=None):
