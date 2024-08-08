@@ -1,11 +1,9 @@
 from QAOA_utils import *
-import QAOA, graph_methods, time, json, random, os
+import QAOA, graph_methods, time, json, random, os, subprocess
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
 from functools import partial
-import subprocess
 from collections import defaultdict
-
 
 def execute_job_parallel(job):
     graph, n_vertices, n_layers, method, identifier, n_steps, n_samples = job
@@ -104,11 +102,11 @@ def get_job_names_from_parameters(n_vertices, n_layers, n_samples, n_isomorph_ma
     return job_names
 
 def get_job_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph=None, max_job=None):
+    
     if max_job == -1:
         max_job = "None"
 
-    job_names = f"job-vertices_{n_vertices}_isomorphmax_{str(
-        n_isomorph_max)}_maxunlabeledgraph_{str(max_unlabeled_graph)}_maxjob_{max_job}"
+    job_names = f"job-vertices_{n_vertices}_isomorphmax_{str(n_isomorph_max)}_maxunlabeledgraph_{str(max_unlabeled_graph)}_maxjob_{max_job}"
     return job_names
 
 def get_result_name_from_job(job):
@@ -153,21 +151,16 @@ def generate_job_graphslist(isomorphic_graph_lists, n_vertices, n_isomorph_max):
     all_jobs = job_lists_QAOA + job_lists_iso
 
     return all_jobs
-def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None, graph_only=False):
 
-    start_time = time.time()
-    np.random.seed(42)
+def generate_jobs(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None, graph_only=False):
 
     if max_job == None or max_job == "None":
         max_job = -1
 
-
     unlabeled_graphs = graph_methods.generate_all_connected_graphs(n_vertices, True)
-    print(f"graphs generated")
 
     unlabeled_graphs_graphs = [graph[0] for graph in unlabeled_graphs]
     unlabeled_graph_number = len(unlabeled_graphs_graphs)
-    print(f"number of unlabeled graphs:  {unlabeled_graph_number}")
 
     if max_unlabeled_graph != None:  # limit to amount of unlabeled graph number if needed. TB Implemented: sampling according to weight
         unlabeled_graphs_graphs = unlabeled_graphs_graphs[:max_unlabeled_graph]
@@ -183,8 +176,6 @@ def generate_jobs1(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max
     if max_job != -1:  # limit to amount of graph number if needed. TB Implemented: sampling according to weight
         all_jobs = all_jobs[:max_job]
 
-    elapsed_time = time.time() - start_time
-    print(f"Elapsed time: {elapsed_time} seconds")
     return all_jobs
 
 def generate_store_n1_jobs_from_graph(jobname, graph, n_jobs, n_layers = 3, n_samples=400):
@@ -207,10 +198,9 @@ def generate_n1_jobs_from_graph(graph, n_jobs, n_layers = 3, n_samples=400):
     return n1_jobs
 
 def job_multiprocess(n_vertices, n_layers, n_steps, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None, parallel_task=True):
-        #multiprocessing doesnt work properly on slurm, do not use
     print("start of QAOA - job1 - multiprocessing")
 
-    all_jobs = generate_jobs1(n_vertices, n_layers, n_steps, n_samples,
+    all_jobs = generate_jobs(n_vertices, n_layers, n_steps, n_samples,
                               n_isomorph_max, max_unlabeled_graph=None, max_job=None)
     jobnames = get_job_names_from_parameters(n_vertices, n_layers, n_samples, n_isomorph_max, max_unlabeled_graph=None, max_job=None)
     results_list = execute_mp_jobs(all_jobs)
@@ -227,9 +217,6 @@ def execute_mp_jobs(jobs, parallel_task=True):
     return results_list
 
 def execute_single_job(job, mock = False):
-
-    # [[[0, 1], [2, 3]], 4, 4, "QAOA", "unlabeledGraph_0123", 20, 100]
-    # (graph,n_vertices, n_layers, cost_layer, label, n_steps = 30, n_samples = 200):
 
     #overwrite number of vertice if needed by graph   
     graph_overwritten = string_graph_to_graph(graph_to_string(job[0]))
@@ -249,8 +236,6 @@ def execute_single_job(job, mock = False):
         result = ["mock0", "mock1", "mock2", "mock3", "mock4", "mock5", "mock6", "mock7", "mock8", "mock9", "mock10"]
     
     return result
-    #jobname = get_result_name_from_job(job)
-    #save_single_job_result(result, jobname)
 
 def save_single_job_result(result, jobname):
 
@@ -341,34 +326,19 @@ def create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_sampl
         all_jobs.append([graph, n_vertices, n_layers,"fQAOA", label, str(n_steps), n_samples])
     return all_jobs
 
-def job_execute_slurmarray(n_vertices, n_layers_array, n_steps=None, n_samples=400, n_isomorph_max=None, max_unlabeled_graph=None, max_job=None, task_id=None):
-    #run for many layers sequentially for each graph
-    
+def job_execute_slurmarray(n_vertices,n_layers_array,n_samples, n_isomorph_max=None, max_unlabeled_graph=None, max_job=None, task_id=None):
     job_graph_names = get_job_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
-    all_jobs_graphs = retrieve_stored_jobs(job_graph_names)
+    job_slurm_execute_slurmarray_from_stored_job_graph_name(job_graph_names,n_layers_array,n_samples)
 
-    for n_layers in n_layers_array:
-    
-        if task_id is None or task_id == -1:
-            return
-
-        all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps, n_samples)
-        result = execute_slurmarray(all_jobs, task_id=task_id)
-
-        jobname = get_result_name_from_job(all_jobs[task_id])
-        save_single_job_result(result, jobname)
-
-def job_slurm_execute_slurmarray_from_stored_job_graph_name(jobname, task_id, n_layers_array = [3], n_sample = 400):
+def job_slurm_execute_slurmarray_from_stored_job_graph_name(jobname, task_id, n_layers = 3, n_sample = 400):
 
     all_jobs_graphs = retrieve_stored_jobs(jobname)
-    for n_layers in n_layers_array:
+    if task_id is None or task_id == -1:
+        return
 
-        if task_id is None or task_id == -1:
-            return
-
-        all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps = None, n_samples = n_sample)
-        result = execute_slurmarray(all_jobs, task_id=task_id)
-        save_single_job_result(result, jobname+"task"+str(task_id))
+    all_jobs = create_joblist_from_jobgraphlist(all_jobs_graphs, n_layers, n_steps = None, n_samples = n_sample)
+    result = execute_slurmarray(all_jobs, task_id=task_id)
+    save_single_job_result(result, jobname+"task"+str(task_id))
 
 def job_execute_slurmarray_from_stored_job_name(jobname, task_id, add_last_job_column_to_result = True):
 
@@ -385,7 +355,6 @@ def job_execute_slurmarray_from_stored_job_name(jobname, task_id, add_last_job_c
 
 def job_execute_vertice_converge_job(n_layer = 3, n_sample = 400, n_graphs = 3):
 
-    # start with this given graph 01_02_13_23 (the worst for fQAOA in previously obtained results)
     graph_4_vertices = [(0,1),(0,2),(1,3),(2,3)]
 
     current_time = datetime.now()
@@ -588,8 +557,8 @@ def process_results_save(results_list, jobnames):
     print("saved")
 
 def job_generate_save_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph=None, max_job=None):
-    all_jobs_graphs = generate_jobs1(n_vertices, n_layers=None, n_steps=None, n_samples=None,n_isomorph_max=n_isomorph_max, max_unlabeled_graph=max_unlabeled_graph, max_job=max_job, graph_only=True)
-    job_names_graph = get_job_names_from_parameters_graphs( n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
+    all_jobs_graphs = generate_jobs(n_vertices, n_layers=None, n_steps=None, n_samples=None,n_isomorph_max=n_isomorph_max, max_unlabeled_graph=max_unlabeled_graph, max_job=max_job, graph_only=True)
+    job_names_graph = get_job_names_from_parameters_graphs(n_vertices, n_isomorph_max, max_unlabeled_graph, max_job)
     store_jobs(all_jobs_graphs, job_names_graph)
 
 def job_generate_save_graphs_vertice_sequence(initial_graph, jobname = "job-sequence", n_graphs =3, n_layer = 3, n_samples = 400):
@@ -608,22 +577,18 @@ def job_generate_save_graphs_vertice_sequence(initial_graph, jobname = "job-sequ
     store_jobs(all_jobs, jobname)
 
 def job_generate_save_graphs_vertice56(jobname = "job56"):
-
     unlabeled_graphs_5 = graph_methods.generate_all_connected_graphs(5, True)
     unlabeled_graphs_6 = graph_methods.generate_all_connected_graphs(6, True)
-
     unlabeled_graphs_5_edges = [item[0] for item in unlabeled_graphs_5]
     unlabeled_graphs_6_edges = [item[0] for item in unlabeled_graphs_6]
-
     all_jobs_5 = generate_job_list(unlabeled_graphs_5_edges, 3,None,1000,5,0)
     all_jobs_6 = generate_job_list(unlabeled_graphs_6_edges, 3,None,1000,6,0)
     all_jobs = all_jobs_5 + all_jobs_6
-
     store_jobs(all_jobs, jobname)
 
 def get_possible_jobnames_from_params(n_vertices, n_layers, n_samples=400, n_steps=None):
     parameters = [f"vertices_{n_vertices}", f"layers_{n_layers}",f"samples_{n_samples}"]    
-    return  get_results_with_jobname(parameters)
+    return get_results_with_jobname(parameters)
 
 def get_results_with_jobname(parameters):
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -633,15 +598,6 @@ def get_results_with_jobname(parameters):
     filtered_files = [f for f in json_files if all(
         sub in f for sub in parameters)]
     return filtered_files
-
-# def get_results_with_jobname(parameters):
-#     script_dir = os.path.dirname(os.path.abspath(__file__))
-#     subdirectory = os.path.join(script_dir, "merged_processed_results")
-#     all_files = os.listdir(subdirectory)
-#     json_files = [f for f in all_files if f.endswith('.txt')]
-#     filtered_files = [f for f in json_files if all(
-#         sub in f for sub in parameters)]
-#     return filtered_files 
 
 def test_slurm_state():
     job_script = return_slurm_array_test_script_string()

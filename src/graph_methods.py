@@ -1,8 +1,6 @@
 import networkx as nx
 from itertools import combinations, groupby
-#import matplotlib.pyplot as plt
 import math, time, random
-
 
 # connected (no free vertices)  graphs with n nodes:
 
@@ -12,16 +10,15 @@ import math, time, random
 
 #connected means that no vertice has no edge, not that all vertices have a path between then
 
-
 def plot_digraph(data):
-# Example input data
-# data = [
-#     ['A', 1, 2, None],
-#     ['B', 4, 5, 'A'],
-#     ['C', 7, 8, 'A'],
-#     ['D', 10, 11, 'B'],
-#     ['E', 12, 13, 'C']
-# ]
+    # Example input data
+    # data = [
+    #     ['A', 1, 2, None],
+    #     ['B', 4, 5, 'A'],
+    #     ['C', 7, 8, 'A'],
+    #     ['D', 10, 11, 'B'],
+    #     ['E', 12, 13, 'C']
+    # ]
 
     # Create a directed graph
     G = nx.DiGraph()
@@ -64,7 +61,6 @@ def node_number_from_graph(combination):
         node_list = list(set(node for edge in combination for node in edge))
         max_node_indice = max(node_list)
         return max_node_indice
-
 
 def generate_all_n1_graphs_from_n_graph(graph): # graph format [(0, 1), (2, 3)]
 
@@ -158,17 +154,15 @@ def add_graph_to_list_isomorphics(nx_graphs):
     return isomorphic_graphs
 
 def generate_all_connected_graphs(n_vertices, filter_isomorphics = False): #connected means with no free vertice
-    n = n_vertices
-    print(f"number of vertices {n} start")
-    all_graphs = []
 
+    all_graphs = []
     # Iterate over all possible combinations of edges
-    smallest_possible_edge_count = math.ceil(n/2)
-    edge_range = range(smallest_possible_edge_count,n*(n-1)//2 + 1)
+    smallest_possible_edge_count = math.ceil(n_vertices/2)
+    edge_range = range(smallest_possible_edge_count,n_vertices*(n_vertices-1)//2 + 1)
 
     for num_edges in edge_range :  # Maximum number of edges for n vertices 
-        print(f"edge {num_edges} on {max(edge_range)}")
-        graph_with_all_nodes = generate_all_possible_connected_graphs_num_edges(n, num_edges, False)
+        graph_with_all_nodes = generate_all_possible_connected_graphs_num_edges(n_vertices, num_edges, False)
+
         # add isomorphic graph and weights
         isomorphic_graphs = []
         for graph in graph_with_all_nodes:           
@@ -176,18 +170,14 @@ def generate_all_connected_graphs(n_vertices, filter_isomorphics = False): #conn
             #add to list with weight one if none present are already isomorphic
             if not isomorphic_graphs or not any(nx.is_isomorphic(graph, isomorphic_graph[0]) for isomorphic_graph in isomorphic_graphs): #nx.is_isomorphic is not same type of isomorphism as match.isomorphism_iter generated
                  isomorphic_graphs.append([graph,1,num_edges, graph])
+
             else:
 
                 isomorphic_to_graph_entries = [existing_graph for existing_graph in isomorphic_graphs if nx.is_isomorphic(graph, existing_graph[0])]
-                first_isomorphic_to_graph_entry = isomorphic_to_graph_entries[0]
-                first_isomorphic_to_graph_entry_graph = first_isomorphic_to_graph_entry[3]
-                first_isomorphic_to_graph_entry_weight = first_isomorphic_to_graph_entry[1] +1 #add current graph to weight
+                first_isomorphic_to_graph_entry, first_isomorphic_to_graph_entry_weight, first_isomorphic_to_graph_entry_graph = isomorphic_to_graph_entries[0], first_isomorphic_to_graph_entry[1] +1, first_isomorphic_to_graph_entry[3]
 
                 # update isomorphic graph with new weights
-                isomorphic_graphs = [
-                [element[0],first_isomorphic_to_graph_entry_weight,num_edges,first_isomorphic_to_graph_entry_graph] if nx.is_isomorphic(graph, element[0]) 
-                else element for element in isomorphic_graphs
-                ]
+                isomorphic_graphs = [[element[0],first_isomorphic_to_graph_entry_weight,num_edges,first_isomorphic_to_graph_entry_graph] if nx.is_isomorphic(graph, element[0]) else element for element in isomorphic_graphs]
 
                 # get number of isomorphic graph already present, get cumulative weight and remove isomorphics
                 graph_entry = [graph,first_isomorphic_to_graph_entry_weight,num_edges,first_isomorphic_to_graph_entry_graph]
@@ -209,7 +199,6 @@ def generate_isomorphics_from_combination(combination, nodes = None, max_isomorp
         nodes = list(range(0,max_node_indice +1))
     
     edge_count = len(combination)
-
     G = return_graph_from_combination(combination, nodes)
     possible_graphs = generate_all_possible_connected_graphs_num_edges(max_node_indice+1,edge_count)
     
@@ -222,7 +211,6 @@ def generate_isomorphics_from_combination(combination, nodes = None, max_isomorp
     index = 0
     isomorphic_graph_list = []
     while count < max_isomorphism_number and index < len(possible_graphs):
-
         G2 = return_graph_from_combination(possible_graphs[index],nodes)
         if nx.is_isomorphic(G, G2):
             count += 1
@@ -233,19 +221,16 @@ def generate_isomorphics_from_combination(combination, nodes = None, max_isomorp
 
 def calculate_plot_mean_automorphism_count_per_edge_number(vertices_choice):
     edge_count_lists = []
-    for n in vertices_choice: #8
+    for n in vertices_choice: 
         all_graphs = generate_all_connected_graphs(n)
         edge_meancount = get_mean_automorphism_count_per_edge_number(all_graphs)
         edge_meancount_vertices_number = [item + [str(n) + " vertices"] for item in edge_meancount]
         edge_count_lists.append(edge_meancount_vertices_number)
 
-    #plot_xylists(edge_count_lists)
-
 def draw_graph(combination , ax = None):
     G = return_graph_from_combination(combination)
     pos = nx.circular_layout(G)
     nx.draw(G, pos)
-
 
 def test_combination_list():
     test_combination1 = [(0,1),(0,2),(2,3),(4,3),(4,1)]
@@ -257,6 +242,7 @@ def test_combination_list():
     return [test_combination1,test_combination2,test_combination3,test_combination31,test_combination32,test_combination33]
 
 def generate_string_graph_representation(graph):
+
     # Initialize an empty list to store the result strings
     result_strings = []
 
@@ -281,6 +267,7 @@ def generate_string_graph_representation(graph):
     return result_strings
 
 def generate_all_graphs(n):
+
     """ Generate all possible graphs with n vertices """
     all_graphs = []
     nodes = range(n)
@@ -289,7 +276,6 @@ def generate_all_graphs(n):
     for num_edges in range(1,n*(n-1)//2 + 1):  # Maximum number of edges for n vertices 
 
         all_graphs_with_num_edges = []
-
         possible_edges = list(combinations(nodes, 2))
         
         # Generate all combinations of edges for the current num_edges
@@ -301,12 +287,10 @@ def generate_all_graphs(n):
             if set(nodes) <= set(node for edge in combo for node in edge)
         ]
 
-        if not combinations_with_all_nodes:  # Check if the list is empty
-            continue  # Skip to the next iteration if the list is empty
+        if not combinations_with_all_nodes: 
+            continue  
 
-        
         # Add graph from combination to list
-        
         for combination in combinations_with_all_nodes:
             G = nx.Graph()
             G.add_nodes_from(nodes)
@@ -323,7 +307,6 @@ def generate_all_graphs(n):
                 all_graphs_with_num_edges.append([G,1])
 
         edges_combination_weight = [(list(graph[0].edges()),graph[1]) for graph in all_graphs_with_num_edges]
-            
         all_graphs.extend(edges_combination_weight)
 
     return all_graphs
@@ -364,4 +347,3 @@ def classical_max_cut_score(edges):
                 max_cut_value = new_cut_value
 
     return max_cut_value
-#combos = generate_all_n1_graphs_from_n_graph([(0,1),(1,2)])

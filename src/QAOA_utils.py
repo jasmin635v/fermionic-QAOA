@@ -37,25 +37,20 @@ def fRyy(theta1, theta2):
                                       [sin_half_theta1, 0, 0, cos_half_theta1]])
 
 
-# current_directory = os.path.dirname(os.path.realpath(__file__))
-# filename = os.path.join(current_directory, 'progress.txt')
-# file_lock = threading.Lock()
-
-
 def parse_args(parser=None):
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument(
         "--n_samples",
         type=int,
-        default=100,
+        default=400,
         help="the number of times the circuit is sampled after the parameters are found",
     )
     parser.add_argument(
         "--n_layers",
         type=int,
         nargs='+',  # Accept one or more integers
-        default=[4],
+        default=3,
         help="The number of mixer / cost layers.",
     )
     parser.add_argument(
