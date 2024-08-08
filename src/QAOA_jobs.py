@@ -608,11 +608,17 @@ def job_generate_save_graphs_vertice_sequence(initial_graph, jobname = "job-sequ
     store_jobs(all_jobs, jobname)
 
 def job_generate_save_graphs_vertice56(jobname = "job56"):
+
     unlabeled_graphs_5 = graph_methods.generate_all_connected_graphs(5, True)
     unlabeled_graphs_6 = graph_methods.generate_all_connected_graphs(6, True)
-    all_jobs_5 = generate_job_graphslist(unlabeled_graphs_5, 5, 0)
-    all_jobs_6 = generate_job_graphslist(unlabeled_graphs_6, 6, 0)
+
+    unlabeled_graphs_5_edges = [item[0] for item in unlabeled_graphs_5]
+    unlabeled_graphs_6_edges = [item[0] for item in unlabeled_graphs_6]
+
+    all_jobs_5 = generate_job_list(unlabeled_graphs_5_edges, 3,None,1000,5,0)
+    all_jobs_6 = generate_job_list(unlabeled_graphs_6_edges, 3,None,1000,6,0)
     all_jobs = all_jobs_5 + all_jobs_6
+
     store_jobs(all_jobs, jobname)
 
 def get_possible_jobnames_from_params(n_vertices, n_layers, n_samples=400, n_steps=None):

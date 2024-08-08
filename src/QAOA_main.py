@@ -29,7 +29,6 @@ if __name__ == '__main__':
     if maxunlblgraph == -1 or maxunlblgraph == 0:
         maxunlblgraph = None
 
-
     #STEP 1 use this to create a list of graphs with n vertices / qbits that slurm will use
     #each graph will have n isomorphic graphs to unlabeled graphs (a graph that can be obtained by shuffling labels)
     #there is n max unlabeled graph and m max jobs (the generated array is sliced to m entries or max jobs)
@@ -40,7 +39,6 @@ if __name__ == '__main__':
     if job_name == "job_generate_graphs_sequence":
         print(" job: job_generate_graphs_sequence")
         QAOA_jobs.job_generate_save_graphs_vertice_sequence(start_graph,stored_job_name)
-
 
     if job_name == "job_generate_graphs_vertice56":
         print(" job: job_generate_graphs_vertice56")
