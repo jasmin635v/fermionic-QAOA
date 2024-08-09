@@ -349,7 +349,7 @@ def job_execute_slurmarray_from_stored_job_name(jobname, task_id, add_last_job_c
     result = execute_slurmarray(all_jobs, task_id=task_id)
 
     if add_last_job_column_to_result:
-        result = [result, all_jobs[task_id][-1]]
+        result.extend([all_jobs[task_id][-1]])
 
     save_single_job_result(result, jobname+"task"+str(task_id))
 
@@ -447,12 +447,12 @@ def job_process_merged_sequence_results_from_jobname(jobname):
    
     def merge_sublists(merged_results):
         # Flatten the input structure, keeping the original lists intact
-        flattened_list = [sublist_merge[0] + [sublist_merge[1]] for sublist_merge in merged_results]
+        #flattened_list = [sublist_merge[0] + [sublist_merge[1]] for sublist_merge in merged_results]
 
         # Dictionary to store merged results for each unique second element
         merged_dict = defaultdict(lambda: [None, None, None, None])  # Updated to store additional elements
 
-        for sublist in flattened_list:
+        for sublist in merged_results:
 
             #classical maxcut score
             #score = graph_methods.classical_max_cut_score(string_graph_to_graph(sublist[2]))
@@ -586,7 +586,7 @@ def job_generate_save_graphs_vertice56(jobname = "job56"):
     all_jobs = all_jobs_5 + all_jobs_6
     store_jobs(all_jobs, jobname)
 
-def get_possible_jobnames_from_params(n_vertices, n_layers, n_samples=400, n_steps=None):
+def get_possible_jobnames_from_params(n_vertices, n_layers, n_samples=400):
     parameters = [f"vertices_{n_vertices}", f"layers_{n_layers}",f"samples_{n_samples}"]    
     return get_results_with_jobname(parameters)
 

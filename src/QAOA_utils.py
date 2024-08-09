@@ -1,12 +1,5 @@
 from pennylane import numpy as np
-import cmath
-import math
-import os
-import time
-import sys
-import argparse
-import subprocess
-import re
+import cmath, math, os, time, sys, argparse, subprocess, re
 
 matchgateOnes = np.array([[1, 0, 0, 1],
                           [0, 1, 1, 0],
