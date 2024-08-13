@@ -16,7 +16,7 @@
                 "--n_steps", "1",
                 "--max_isomorph_number", "0",
                 "--max_job", "4",
-                "--job_name","job3_execute_slurmarray",  //#job1_generate //job1_execute_slurmarray //job1_process_results //#job2_generate_graphs
+                "--job_name","job_generate_graphs_vertice56",  //#job1_generate //job1_execute_slurmarray //job1_process_results //#job2_generate_graphs
                 "--task_id","0",
                 "--max_unlbl_graph", "10"
             ],

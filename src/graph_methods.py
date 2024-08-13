@@ -158,7 +158,7 @@ def generate_all_connected_graphs(n_vertices, filter_isomorphics = False): #conn
     all_graphs = []
     # Iterate over all possible combinations of edges
     smallest_possible_edge_count = math.ceil(n_vertices/2)
-    edge_range = range(smallest_possible_edge_count,n_vertices*(n_vertices-1)//2 + 1)
+    edge_range = range(smallest_possible_edge_count,n_vertices*(n_vertices-1)//2 + 1) #below this edge number, not all vertices can have an edge. above all the vertices are already fully connected
 
     for num_edges in edge_range :  # Maximum number of edges for n vertices 
         graph_with_all_nodes = generate_all_possible_connected_graphs_num_edges(n_vertices, num_edges, False)
@@ -174,6 +174,7 @@ def generate_all_connected_graphs(n_vertices, filter_isomorphics = False): #conn
             else:
 
                 isomorphic_to_graph_entries = [existing_graph for existing_graph in isomorphic_graphs if nx.is_isomorphic(graph, existing_graph[0])]
+                first_isomorphic_to_graph_entry = isomorphic_to_graph_entries[0]
                 first_isomorphic_to_graph_entry, first_isomorphic_to_graph_entry_weight, first_isomorphic_to_graph_entry_graph = isomorphic_to_graph_entries[0], first_isomorphic_to_graph_entry[1] +1, first_isomorphic_to_graph_entry[3]
 
                 # update isomorphic graph with new weights
